@@ -1,18 +1,10 @@
-use axum::{routing::get, Router};
-use tokio::net::TcpListener;
+use axum::{routing::{get, post}, Router};
 
-use crate::routes::hello_world::hello_world;
+use crate::{routes::{hello_world::hello_world, users::create_user::create_user}, utils::app_state::AppState};
 
-pub fn create_router() -> Router {
+pub fn create_router(app_state: AppState) -> Router {
     Router::new()
         .route("/", get(hello_world))
-}
-
-pub async fn run() {
-    let app = create_router();
-    let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
-
-    axum::serve(listener, app)
-        .await
-        .unwrap();
+        .route("/api/v1/users", post(create_user))
+        .with_state(app_state)
 }
