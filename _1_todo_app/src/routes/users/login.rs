@@ -53,13 +53,13 @@ pub async fn login(
         } else {
             Err(
                 AppError::new(
-                    StatusCode::NOT_FOUND, 
+                    StatusCode::BAD_REQUEST, 
                     "Bad username or password")
             )
         }
     } else {
         Err(
-            AppError::new(StatusCode::NOT_FOUND, "Bad username or passord")
+            AppError::new(StatusCode::BAD_REQUEST, "Bad username or passord")
         )
     }
 }
