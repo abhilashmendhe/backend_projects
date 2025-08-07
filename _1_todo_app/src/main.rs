@@ -14,15 +14,15 @@ async fn main() {
     dotenv().ok();
     let db_url = std::env::var("DATABASE_URL").unwrap();
     let jwt_secret = std::env::var("JWT_SECRET").unwrap();
-    
+    // println!("db_url: {}", db_url);
     let db = match Database::connect(db_url).await {
         Ok(db) => db,
         Err(err) => {
             eprintln!("Failed to connect to the database: {:?}",err);
-            panic!()
+            panic!();
         }
     };
-
+    // println!("db: {:?}",db);
     let app_state = AppState {
         db,
         jwt_secret
