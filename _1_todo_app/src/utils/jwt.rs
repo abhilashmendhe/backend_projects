@@ -1,7 +1,7 @@
 use axum::http::StatusCode;
 use bcrypt::verify;
 use chrono::Duration;
-use jsonwebtoken::{encode, EncodingKey, Header};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 
 use crate::utils::app_error::AppError;
@@ -46,3 +46,29 @@ pub fn verify_jwt(password: &str, hash: &str) -> Result<bool, AppError> {
             )
         })
 } 
+
+pub fn validate_token(
+    secret: &str, 
+    token: &str) -> Result<bool, AppError> {
+
+    decode::<Claims>(token, 
+        &DecodingKey::from_secret(secret.as_bytes()), 
+        &Validation::new(jsonwebtoken::Algorithm::HS256)
+    ).map_err(|err| {
+        eprintln!("Error validating token: {:?}", err);
+        match err.kind() {
+            jsonwebtoken::errors::ErrorKind::InvalidToken 
+            | jsonwebtoken::errors::ErrorKind::InvalidSignature => {
+                AppError::new(
+                    StatusCode::UNAUTHORIZED, 
+                    "Bad or missing token"
+                )
+            }
+            _=> {
+                eprintln!("Error validating token: {:?}", err);
+                AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Error validating token")
+            }
+        }
+    })
+    .map(|_| true)
+}

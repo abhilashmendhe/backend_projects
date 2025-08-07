@@ -2,6 +2,8 @@ pub mod router;
 pub mod routes;
 pub mod database;
 pub mod utils;
+pub mod middleware;
+
 use tokio::net::TcpListener;
 
 use crate::{router::create_router, utils::app_state::AppState};
