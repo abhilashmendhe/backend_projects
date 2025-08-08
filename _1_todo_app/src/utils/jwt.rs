@@ -61,7 +61,7 @@ pub fn validate_token(
             | jsonwebtoken::errors::ErrorKind::InvalidSignature => {
                 AppError::new(
                     StatusCode::UNAUTHORIZED, 
-                    "Bad or missing token"
+                    "Not authenticated."
                 )
             }
             _=> {
