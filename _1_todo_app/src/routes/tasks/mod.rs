@@ -6,7 +6,7 @@ pub mod create_task_extractor;
 pub mod get_all_tasks;
 pub mod get_one_task;
 pub mod update_tasks;
-
+pub mod delete_task;
 #[derive(Serialize, Deserialize)]
 pub struct RequestTask {
     #[serde(
