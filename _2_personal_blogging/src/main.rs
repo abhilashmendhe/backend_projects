@@ -37,6 +37,6 @@ async fn main() -> Result<(), BlogAppError> {
     };
     let app_state = AppState::new(config, pool);
     
-    run().await?;
+    run(app_state).await?;
     Ok(())
 }

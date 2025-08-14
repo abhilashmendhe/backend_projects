@@ -1,3 +1,4 @@
+#[derive(Debug, Clone)]
 pub struct Config {
     db_url: String,
     jwt_secret: String
