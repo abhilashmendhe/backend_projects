@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(64) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     deleted_at TIMESTAMPTZ,
-    token TEXT
+    token TEXT, 
+    email VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS posts (
