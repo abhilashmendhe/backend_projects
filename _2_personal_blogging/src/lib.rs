@@ -1,10 +1,10 @@
 pub mod utils;
 pub mod routers;
+pub mod routes;
+pub mod models;
 
 use tokio::net::TcpListener;
-
 use crate::{routers::create_router, utils::{app_state::AppState, errors::BlogAppError}};
-
 
 pub async fn run(app_state: AppState) -> Result<(), BlogAppError> {
 

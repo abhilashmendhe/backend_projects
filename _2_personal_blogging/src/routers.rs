@@ -1,13 +1,13 @@
 use std::sync::{atomic::AtomicU32, Arc};
 
-use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::get, Router};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::{get, post}, Router};
 
-use crate::utils::app_state::AppState;
+use crate::{routes::users::create_user::create_user, utils::app_state::AppState};
 
 pub fn create_router(app_state: AppState) -> Router {
 
     Router::new()
-        .route("/", get("Hello world"))
+        .route("/v1/users", post(create_user))
         .route("/health", get(health_check))
         .with_state(app_state)
 }
