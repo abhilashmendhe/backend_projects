@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  database:
+    container_name: postgresql
+    image: postgres:latest
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=pass
+    ports:
+      - 5433:5432
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  db-init:
+    image: postgres:latest
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - ./database/init.sql:/init.sql:ro
+    entrypoint: >
+      bash -c "
+        echo 'Running init.sql...';
+        PGPASSWORD=pass psql -h database -U postgres -f /init.sql;
+        echo 'Done running init.sql';
+      "
+    restart: "no"
+volumes:
+  db-data:
+    # external: true
