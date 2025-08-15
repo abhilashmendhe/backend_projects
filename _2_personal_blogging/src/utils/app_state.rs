@@ -18,6 +18,12 @@ impl AppState {
     }
 }
 
+impl FromRef<AppState> for Config {
+    fn from_ref(state: &AppState) -> Self {
+        state.config.clone()
+    }
+}
+
 impl FromRef<AppState> for PgPool {
     fn from_ref(state: &AppState) -> Self {
         state.db.clone()

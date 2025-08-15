@@ -13,7 +13,11 @@ pub async fn create_user(
     // 1. extract username from req_user
     let username = req_user.username;
     let hash_password = hash_password(&req_user.password)?;
-    let email = req_user.email;
+    let email = if let Some(email) = req_user.email {
+        email
+    } else {
+        return Err(AppError::new(StatusCode::BAD_REQUEST, "Need email to create user."));
+    };
 
     // 2. make INSERT INTO db query
     let row = sqlx::query(
@@ -65,12 +69,13 @@ pub fn hash_password(password: &str) -> Result<String, AppError> {
 }
 
 pub fn verify_password(password: &str, hash_pass: &str) -> Result<bool, AppError> {
+    println!("in verify pass");
     verify(password, hash_pass)
         .map_err(|err| {
             eprintln!("User provided invalid password: {:?}", err);
             AppError::new(
-                StatusCode::BAD_REQUEST, 
-                "Incorrect username and/or password"
+                StatusCode::INTERNAL_SERVER_ERROR, 
+                "Error verifying user details.."
             )
         })
 }

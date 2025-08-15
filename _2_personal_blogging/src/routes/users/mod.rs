@@ -2,12 +2,13 @@ use serde::{Deserialize, Serialize};
 
 pub mod create_user;
 pub mod fetch_users;
+pub mod login;
 
 #[derive(Debug, Deserialize)]
 pub struct RequestUser {
     pub username: String, 
     pub password: String,
-    pub email: String
+    pub email: Option<String>
 }
 
 #[derive(Debug, Serialize)]
