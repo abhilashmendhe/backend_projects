@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 pub mod create_user;
 pub mod fetch_users;
 pub mod login;
+pub mod logout;
 
 #[derive(Debug, Deserialize)]
 pub struct RequestUser {

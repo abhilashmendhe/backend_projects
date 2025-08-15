@@ -1,5 +1,5 @@
 use axum::http::StatusCode;
-use jsonwebtoken::{encode, EncodingKey, Header};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 
 use crate::utils::errors::AppError;
@@ -31,4 +31,29 @@ pub async fn create_token(
                 "There was an error, please try again later."
             )
         })
+}
+
+pub async fn validate_token(secret: &str, token: &str) -> Result<bool, AppError> {
+
+    decode::<Claims>(
+        token, 
+        &DecodingKey::from_secret(secret.as_bytes()), 
+        &Validation::new(jsonwebtoken::Algorithm::HS256)
+    ).map_err(|err| {
+        eprintln!("Error validating token: {:?}", err);
+        match err.kind() {
+            jsonwebtoken::errors::ErrorKind::InvalidToken 
+            | jsonwebtoken::errors::ErrorKind::InvalidSignature => {
+                AppError::new(
+                    StatusCode::UNAUTHORIZED, 
+                    "Not authenticated."
+                )
+            }
+            _=> {
+                eprintln!("Error validating token: {:?}", err);
+                AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Error validating token")
+            }
+        }
+    })
+    .map(|_|true)
 }

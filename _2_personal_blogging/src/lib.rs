@@ -2,6 +2,7 @@ pub mod utils;
 pub mod routers;
 pub mod routes;
 pub mod models;
+pub mod middleware;
 
 use tokio::net::TcpListener;
 use crate::{routers::create_router, utils::{app_state::AppState, errors::BlogAppError}};
