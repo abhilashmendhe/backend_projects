@@ -2,7 +2,7 @@ use axum::{body::Body, extract::{Request, State}, http::{HeaderMap, StatusCode},
 use sqlx::PgPool;
 use sqlx::Row;
 
-use crate::{models::user::UserDB, utils::{config::Config, errors::AppError, jwt::validate_token}};
+use crate::{models::user_model::UserDB, utils::{config::Config, errors::AppError, jwt::validate_token}};
 
 pub async fn require_authentication(
     State(db): State<PgPool>,

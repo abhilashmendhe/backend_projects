@@ -1,7 +1,7 @@
 use axum::{extract::State, http::StatusCode, Extension};
 use sqlx::PgPool;
 
-use crate::{models::user::UserDB, utils::errors::AppError};
+use crate::{models::user_model::UserDB, utils::errors::AppError};
 
 pub async fn logout(
     Extension(user): Extension<UserDB>,
