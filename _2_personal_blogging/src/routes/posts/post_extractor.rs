@@ -12,7 +12,8 @@ pub struct ValidateCreatePost {
     #[validate(required(message = "missing blog post content"), length(min = 8))]
     pub content: Option<String>,
     #[validate(required(message = "missing published"))]
-    pub published: Option<bool>
+    pub published: Option<bool>,
+    pub login_required: Option<bool>
 }
 
 impl<S> FromRequest<S> for ValidateCreatePost

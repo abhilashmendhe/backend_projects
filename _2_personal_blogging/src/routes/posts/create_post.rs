@@ -9,18 +9,35 @@ pub async fn create_post(
     State(db): State<PgPool>,
     post: ValidateCreatePost
 ) -> Result<(StatusCode, Json<ResponsePost>), AppError> {
-
-    let post_row = sqlx::query(r#"
-        INSERT INTO posts(title, content, author_id, published) 
-        VALUES ($1, $2, $3, $4)
-        RETURNING id, title, content, author_id, created_at, published
-    "#)
-    .bind(post.title.unwrap())
-    .bind(post.content.unwrap())
-    .bind(user.id)
-    .bind(post.published.unwrap())
-    .fetch_one(&db)
-    .await
+    
+    let post_row = if let Some(login_r) = post.login_required {
+        sqlx::query(r#"
+                INSERT INTO posts(title, content, author_id, published, login_required) 
+                VALUES ($1, $2, $3, $4, $5)
+                RETURNING id, title, content, author_id, created_at, published
+            "#)
+            .bind(post.title.unwrap())
+            .bind(post.content.unwrap())
+            .bind(user.id)
+            .bind(post.published.unwrap())
+            .bind(login_r)
+            .fetch_one(&db)
+            .await
+    } else {
+        sqlx::query(r#"
+                INSERT INTO posts(title, content, author_id, published) 
+                VALUES ($1, $2, $3, $4)
+                RETURNING id, title, content, author_id, created_at, published
+            "#)
+            .bind(post.title.unwrap())
+            .bind(post.content.unwrap())
+            .bind(user.id)
+            .bind(post.published.unwrap())
+            .fetch_one(&db)
+            .await
+    };
+    
+    let post_row = post_row
     .map_err(|err| {
         eprintln!("Error inserting post in the DB: {:?}", err);
         AppError::new(

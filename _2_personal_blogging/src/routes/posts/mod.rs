@@ -2,6 +2,7 @@ use serde::Serialize;
 
 pub mod create_post;
 pub mod post_extractor;
+pub mod get_posts;
 
 #[derive(Debug, Serialize)]
 pub struct ResponsePost {
