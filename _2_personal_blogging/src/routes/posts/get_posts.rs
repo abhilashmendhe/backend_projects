@@ -1,4 +1,4 @@
-use axum::{extract::State, http::{HeaderMap, StatusCode}, Json};
+use axum::{extract::{Path, State}, http::{HeaderMap, StatusCode}, Json};
 use sqlx::PgPool;
 use sqlx::Row;
 
@@ -61,4 +61,61 @@ pub async fn fetch_all_posts(
     Ok((StatusCode::OK, Json(ResponsePosts{data: res})))
 }
 
-pub async fn fetch_post_by_id() {}
+pub async fn fetch_post_by_id(
+    State(db): State<PgPool>,
+    State(config): State<Config>,
+    headers: HeaderMap,
+    Path(post_id): Path<i32>
+) -> Result<(StatusCode, Json<ResponsePost>), AppError> {
+    let post = if let Some(token) = headers.get("x-auth-token") {
+        println!("token: {:?}",token);
+        let header_token = token.to_str()
+            .map_err(|err|{
+                eprintln!("Error extracting token: {:?}", err);
+                AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Error reading token")
+            })?;
+        
+        validate_token(&config.jwt_secret(), header_token).await?;
+
+        sqlx::query(r#"
+            SELECT * FROM posts WHERE id=$1 AND published=$2 AND deleted_at IS NULL
+        "#)
+        .bind(post_id)
+        .bind(true)
+        .fetch_one(&db)
+        .await
+        .map_err(|error| {
+            eprintln!("Error getting user by token: {:?}", error);
+            AppError::new(
+                StatusCode::UNAUTHORIZED,
+                "Need to login to view the post or post doesn't exists",
+            )
+        })?        
+
+    } else {
+        sqlx::query(r#"
+            SELECT * FROM posts WHERE id=$1 AND published=$2 AND login_required=$3 AND deleted_at IS NULL
+        "#)
+        .bind(post_id)
+        .bind(true)
+        .bind(false)
+        .fetch_one(&db)
+        .await
+        .map_err(|error| {
+            eprintln!("Error getting user by token: {:?}", error);
+            AppError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Post not found and/or require login to view the post.",
+            )
+        })?
+    };
+
+    let resp_post = ResponsePost {
+            id: post.get("id"),
+            title: post.get("title"),
+            content: post.get("content"),
+            author_id: post.get("author_id"),
+            published: true
+        };
+    Ok((StatusCode::OK, Json(resp_post)))
+}
