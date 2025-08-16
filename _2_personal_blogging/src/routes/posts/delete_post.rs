@@ -29,7 +29,6 @@ pub async fn delete_post(
         )
     })?;
     
-    println!("{:?}", pq_res);
     if pq_res.rows_affected() > 0 {
         Ok((
             StatusCode::CREATED,
