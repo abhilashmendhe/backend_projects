@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 pub mod create_user;
-pub mod fetch_users;
+// pub mod fetch_users;
 pub mod login;
 pub mod logout;
+pub mod update_password;
 
 #[derive(Debug, Deserialize)]
 pub struct RequestUser {

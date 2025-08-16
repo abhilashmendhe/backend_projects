@@ -69,7 +69,7 @@ pub fn hash_password(password: &str) -> Result<String, AppError> {
 }
 
 pub fn verify_password(password: &str, hash_pass: &str) -> Result<bool, AppError> {
-    println!("in verify pass");
+    // println!("in verify pass");
     verify(password, hash_pass)
         .map_err(|err| {
             eprintln!("User provided invalid password: {:?}", err);
