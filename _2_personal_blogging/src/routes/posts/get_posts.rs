@@ -20,7 +20,7 @@ pub async fn fetch_all_posts(
         validate_token(&config.jwt_secret(), header_token).await?;
 
         sqlx::query(r#"
-            SELECT * FROM posts WHERE published=$1
+            SELECT * FROM posts WHERE published=$1 AND deleted_at IS NULL
         "#)
         .bind(true)
         .fetch_all(&db)
@@ -35,7 +35,7 @@ pub async fn fetch_all_posts(
 
     } else {
         sqlx::query(r#"
-            SELECT * FROM posts WHERE published=$1 and login_required=$2
+            SELECT * FROM posts WHERE published=$1 AND login_required=$2 AND deleted_at IS NULL
         "#)
         .bind(true)
         .bind(false)
