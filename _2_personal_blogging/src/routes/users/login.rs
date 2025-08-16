@@ -18,17 +18,17 @@ pub async fn login(
 
     // 1. fetch username, and hash_password for the speciied username and password
     let user_row = sqlx::query(r#"
-        SELECT id, username, password, email FROM users WHERE username=$1
+        SELECT id, username, password, email FROM users WHERE username=$1 AND deleted_at IS NULL
     "#)
     .bind(&username)
     .fetch_one(&db)
     .await
     .map_err(|err| {
-        eprintln!("Error fetching username: {:?}", err);
+        eprintln!("Error fetching username: {:?}", &err);
         if let Some(_) = err.as_database_error() {
             AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "Error fetching user")
         } else {
-            AppError::new(StatusCode::BAD_REQUEST, "Incorrect username and/or password")
+            AppError::new(StatusCode::BAD_REQUEST, "Incorrect username and/or password, or user doesn't exists")
         }
     })?;
 
