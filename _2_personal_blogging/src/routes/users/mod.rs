@@ -5,6 +5,7 @@ pub mod create_user;
 pub mod login;
 pub mod logout;
 pub mod update_password;
+pub mod delete_user;
 
 #[derive(Debug, Deserialize)]
 pub struct RequestUser {
