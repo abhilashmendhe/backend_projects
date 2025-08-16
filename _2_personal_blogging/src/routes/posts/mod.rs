@@ -4,6 +4,8 @@ pub mod create_post;
 pub mod post_extractor;
 pub mod get_posts;
 pub mod delete_post;
+pub mod update_post;
+
 #[derive(Debug, Serialize)]
 pub struct ResponsePost {
     pub id: i32,
