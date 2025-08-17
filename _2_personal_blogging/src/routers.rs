@@ -2,7 +2,7 @@ use std::sync::{atomic::AtomicU32, Arc};
 
 use axum::{extract::State, http::StatusCode, middleware, response::IntoResponse, routing::{delete, get, patch, post, put}, Router};
 
-use crate::{middleware::require_auth::require_authentication, routes::{comments::{create_comment::create_comment, delete_comment::delete_comment, update_comment::update_comment}, posts::{create_post::create_post, delete_post::delete_post, get_posts::{fetch_all_posts, fetch_post_by_id}, update_post::update_post}, users::{create_user::create_user, delete_user::delete_user, login::login, logout::logout, update_password::update_user_password}}, utils::app_state::AppState};
+use crate::{middleware::require_auth::require_authentication, routes::{comments::{create_comment::create_comment, delete_comment::delete_comment, fetch_comments::fetch_comments, update_comment::update_comment}, posts::{create_post::create_post, delete_post::delete_post, get_posts::{fetch_all_posts, fetch_post_by_id}, update_post::update_post}, users::{create_user::create_user, delete_user::delete_user, login::login, logout::logout, update_password::update_user_password}}, utils::app_state::AppState};
 
 pub fn create_router(app_state: AppState) -> Router {
 
@@ -17,6 +17,9 @@ pub fn create_router(app_state: AppState) -> Router {
             .route_layer(middleware::from_fn_with_state(app_state.clone(), require_authentication)))
 
         .route("/v1/posts/{post_id}/comments/{comment_id}", delete(delete_comment)
+            .route_layer(middleware::from_fn_with_state(app_state.clone(), require_authentication)))
+
+        .route("/v1/posts/{:post_id}/comments", get(fetch_comments)
             .route_layer(middleware::from_fn_with_state(app_state.clone(), require_authentication)))
 
         .route("/v1/posts/{:post_id}/comments", post(create_comment)
