@@ -45,5 +45,5 @@ CREATE TABLE IF NOT EXISTS comments (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     CONSTRAINT fk_comments_author FOREIGN KEY (user_id) REFERENCES users (id),
     CONSTRAINT fk_comments_post FOREIGN KEY (post_id) REFERENCES posts (id),
-    CONSTRAINT fk_parent_comment FOREIGN KEY (parent_comment_id) REFERENCES comments (id)
+    CONSTRAINT fk_parent_comment FOREIGN KEY (parent_comment_id) REFERENCES comments (id) ON DELETE CASCADE
 );
