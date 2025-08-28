@@ -15,7 +15,8 @@ pub enum Loc {
 #[derive(Debug, Deserialize, Clone)]
 pub struct QueryParam{
     #[serde(deserialize_with="loc_deserializer")]
-    pub location: Loc
+    pub location: Loc,
+    pub unit: Option<String>
 }
 
 fn loc_deserializer<'de,D>(deserializer: D) -> Result<Loc, D::Error>
