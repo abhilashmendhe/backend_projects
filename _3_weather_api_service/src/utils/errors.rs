@@ -10,7 +10,10 @@ pub enum WeatherServiceErr {
     Io(#[from] std::io::Error),
 
     #[error("VarError: {0}")]
-    VarErr(#[from] std::env::VarError)
+    VarErr(#[from] std::env::VarError),
+
+    #[error("Web Server Error")]
+    WebServerErr(WebServerErr)
 }   
 
 
