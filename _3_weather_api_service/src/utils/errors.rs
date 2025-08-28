@@ -12,6 +12,9 @@ pub enum WeatherServiceErr {
     #[error("VarError: {0}")]
     VarErr(#[from] std::env::VarError),
 
+    #[error("Reqwest Err: {0}")]
+    ReqwestErr(#[from] reqwest::Error),
+    
     #[error("Web Server Error")]
     WebServerErr(WebServerErr)
 }   
