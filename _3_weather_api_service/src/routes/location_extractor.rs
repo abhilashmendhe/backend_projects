@@ -27,7 +27,7 @@ where
 
         if s.len() > 0 {
             let s_points = s.split(",").collect::<Vec<&str>>();
-            println!("{:?}",s_points);
+            // println!("{:?}",s_points);
             if s_points.len() == 1 {
                 let cityname = s_points[0];
                 Ok(Loc::TEXT(cityname.to_string()))
