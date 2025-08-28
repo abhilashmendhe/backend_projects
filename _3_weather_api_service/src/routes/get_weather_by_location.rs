@@ -1,8 +1,9 @@
 
-use axum::extract::{ State};
+use axum::{extract::State, Json};
 use reqwest::StatusCode;
+use tracing::error;
 
-use crate::{ routes::location_extractor::{QueryParam, ValidateLoc}, utils::{config::Config, errors::WebServerErr}, weather_api_requests::get_today_weather::get_today_weather};
+use crate::{ models::weather_api_model::WeatherAPIModel, routes::location_extractor::{QueryParam, ValidateLoc}, utils::{config::Config, errors::WebServerErr}, weather_api_requests::get_today_weather::get_today_weather};
 
 
 
@@ -10,7 +11,7 @@ pub async fn get_weather_by_location(
     State(config): State<Config>,
     // Query(params): Query<QueryParam>
     ValidateLoc(param): ValidateLoc<QueryParam>
-) -> Result<(), WebServerErr> {
+) -> Result<(StatusCode, Json<WeatherAPIModel>), WebServerErr> {
 
     // 1. extract query param
     // 1.1. extract location (cityname or (lat,long))
@@ -37,8 +38,21 @@ pub async fn get_weather_by_location(
     // 2. first check if redis contains the key
 
     // 3. If not, then fetch from the api
-    get_today_weather(config.web_api_key(), loc_str, unit)
-    .await?;
+    let api_weather = get_today_weather(
+            config.web_api_key(), 
+            loc_str, 
+            unit
+        ).await
+        .map_err(|err| {
+            error!("{:?}",err);
+            WebServerErr::new(
+                StatusCode::INTERNAL_SERVER_ERROR, 
+                "Failed to decode/fetch the weather result")
+        })?;
 
-    Ok(())
+    // dbg!(api_weather);
+    Ok((
+        StatusCode::OK,
+        Json(api_weather)
+    ))
 }
