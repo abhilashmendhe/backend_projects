@@ -42,7 +42,7 @@ where
                             error!("{:?}",err);
                             de::Error::custom("Failed to parse `longitude`")                         
                         })?;
-                if (lat >= -90.0 && lat <= 90.0) && (long >= -180.0 && long <= 180.0) {
+                if (lat >= -85.05112878 && lat <= 85.05112878) && (long >= -180.0 && long <= 180.0) {
                     Ok(Loc::NUM((lat,long)))
                 } else {
                     Err(de::Error::custom("`latitue,longitude` values are out of range."))
