@@ -18,6 +18,9 @@ pub enum WeatherServiceErr {
     #[error("Redis error: {0}")]
     RedisError(#[from] redis::RedisError),
 
+    #[error("serde_json error: {0}")]
+    SerdeJSONErr(#[from] serde_json::Error),
+    
     #[error("Web Server Error")]
     WebServerErr(WebServerErr)
 }   
@@ -50,5 +53,21 @@ impl IntoResponse for WebServerErr {
             self.code,
             Json(ErrorResponse{error_message: self.message.clone()})
         ).into_response()
+    }
+}
+
+impl IntoResponse for WeatherServiceErr {
+    fn into_response(self) -> axum::response::Response {
+        match self {
+            WeatherServiceErr::Io(error) => (error.to_string()).into_response(),
+            WeatherServiceErr::VarErr(error) => (error.to_string()).into_response(),
+            WeatherServiceErr::ReqwestErr(error) => (error.to_string()).into_response(),
+            WeatherServiceErr::RedisError(error) => (error.to_string()).into_response(),
+            WeatherServiceErr::SerdeJSONErr(error) => (error.to_string()).into_response(),
+            WeatherServiceErr::WebServerErr(web_server_err) => (
+                    web_server_err.code,
+                    Json(ErrorResponse{error_message: web_server_err.message.clone()})
+                ).into_response(),
+        }
     }
 }
