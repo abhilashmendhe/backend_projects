@@ -3,7 +3,8 @@ $ cargo watch -q -c -w src/ -x run
 */
 
 use _3_weather_api_service::{run, utils::{app_state::AppState, config::Config, errors::WeatherServiceErr}};
-
+use redis::Connection;
+use tracing::*;
 
 #[tokio::main]  
 async fn main() -> Result<(), WeatherServiceErr> {
@@ -27,6 +28,23 @@ async fn main() -> Result<(), WeatherServiceErr> {
     // 4. Init Config
     let config = Config::new(web_api_key);
 
+    let client = redis::Client::open("redis://127.0.0.1:6379/")  ?;
+    let conn: Connection;
+    
+    loop {
+        match client.get_connection() {
+            Ok(connection) => {
+                conn = connection;
+                break;
+            },
+            Err(err) => {
+                error!("{:?}",err);
+                let _ = std::thread::sleep(std::time::Duration::from_millis(5000));
+            },
+        }
+    }
+    // let value: String = conn.get("key")?;
+    // println!("{:?}",value);
     // 5. Init AppState
     let app_state = AppState::new(config);
 

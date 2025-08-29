@@ -15,6 +15,9 @@ pub enum WeatherServiceErr {
     #[error("Reqwest Err: {0}")]
     ReqwestErr(#[from] reqwest::Error),
     
+    #[error("Redis error: {0}")]
+    RedisError(#[from] redis::RedisError),
+
     #[error("Web Server Error")]
     WebServerErr(WebServerErr)
 }   
