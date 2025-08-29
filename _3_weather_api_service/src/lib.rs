@@ -7,6 +7,7 @@ pub mod utils;
 pub mod router;
 pub mod routes;
 pub mod weather_api_requests;
+pub mod models;
 
 pub async fn run(
     addr: &str,
