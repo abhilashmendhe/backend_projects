@@ -25,10 +25,11 @@ async fn main() -> Result<(), WeatherServiceErr> {
     let redis_port = std::env::var("REDIS_PORT").unwrap_or("6379".to_string());
     let redis_addr = format!("redis://{}:{}/",host,redis_port);
 
-    let web_api_key = std::env::var("WEB_API_KEY")?;
-    
+    let weather_api_key = std::env::var("VISUAL_CROSSING_KEY")?;
+    let geofy_key = std::env::var("GEOAPIFY_KEY")?;
+
     // 4. Init Config
-    let config = Config::new(web_api_key);
+    let config = Config::new(weather_api_key, geofy_key);
 
     let client = redis::Client::open(redis_addr)  ?;
     let conn;

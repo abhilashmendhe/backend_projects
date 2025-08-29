@@ -1,14 +1,19 @@
 #[derive(Debug, Clone)]
 pub struct Config {
-    web_api_key: String
+    weather_api_key: String,
+    geofy_key: String
 }
 
 impl Config {
-    pub fn new(web_api_key: String) -> Self {
-        Self { web_api_key }
+    pub fn new(weather_api_key: String, geofy_key: String) -> Self {
+        Self { weather_api_key, geofy_key }
     }
 
-    pub fn web_api_key(&self) -> String {
-        self.web_api_key.clone()
+    pub fn weather_api_key(&self) -> String {
+        self.weather_api_key.clone()
+    }
+
+    pub fn geofy_key(&self) -> String {
+        self.geofy_key.clone()
     }
 }
