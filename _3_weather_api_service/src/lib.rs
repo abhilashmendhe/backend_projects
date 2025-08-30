@@ -6,8 +6,9 @@ use crate::{router::create_routers, utils::{app_state::AppState, errors::Weather
 pub mod utils;
 pub mod router;
 pub mod routes;
-pub mod weather_api_requests;
+pub mod api_requests;
 pub mod models;
+pub mod queries;
 
 pub async fn run(
     addr: &str,
