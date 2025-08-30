@@ -16,8 +16,8 @@ pub fn create_routers(app_state: AppState) -> Router {
     
     Router::new()
         .route("/v1/weather", get(get_weather_by_location))
-        .layer(cors)
         .route_layer(middleware::from_fn_with_state(app_state.clone(), rate_limit))
+        .layer(cors)
         .route("/health_check", get(health_check))
         .with_state(app_state)
 }
