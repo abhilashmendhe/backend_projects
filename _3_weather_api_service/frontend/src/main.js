@@ -1,5 +1,6 @@
 import { initializeData } from './load_cities.js';
 import { fetchWeather } from './fetch_weather_request.js';
+import { mapPoint } from './map_point.js';
 
 // 0. set map
 var map = L.map('map').setView([51.505, -0.09], 13);
@@ -35,38 +36,19 @@ async function fetchWeatherInfo(e) {
   if (inp_city) {
 
     url = url + inp_city;
+    // console.log(url);
     const weather_info = await fetchWeather(url);
+    mapPoint(map, weather_info);
 
-    let lat = weather_info.latitude;
-    let long = weather_info.longitude;
-    map.setView([lat, long], 13);
-    
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    L.marker([lat, long]).addTo(map)
-      .bindPopup(`Weather info for location: ${inp_city}`)
-      .openPopup();
   } else if (inp_latitude && inp_longitude) {
     
     if (typeof inp_latitude === 'number' && typeof inp_longitude === 'number'){
     
       url = url + inp_latitude + "," + inp_longitude;
-      console.log(url);
+      // console.log(url);
       const weather_info = await fetchWeather(url);
-
-      let lat = weather_info.latitude;
-      let long = weather_info.longitude;
-      map.setView([lat, long], 13);
-      
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(map);
-      const inp_city = weather_info.address;
-      L.marker([lat, long]).addTo(map)
-        .bindPopup(`Weather info for location: ${inp_city}`)
-        .openPopup();
+      mapPoint(map, weather_info);
+     
     } else {
     
       alert("Both (`latitude`,`longitude`) should be float values")
