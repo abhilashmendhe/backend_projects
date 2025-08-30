@@ -2,6 +2,7 @@ use axum::{response::IntoResponse, Json};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use tracing::error;
 
 #[derive(Debug, Error)]
 pub enum WeatherServiceErr {
@@ -59,11 +60,26 @@ impl IntoResponse for WebServerErr {
 impl IntoResponse for WeatherServiceErr {
     fn into_response(self) -> axum::response::Response {
         match self {
-            WeatherServiceErr::Io(error) => (error.to_string()).into_response(),
-            WeatherServiceErr::VarErr(error) => (error.to_string()).into_response(),
-            WeatherServiceErr::ReqwestErr(error) => (error.to_string()).into_response(),
-            WeatherServiceErr::RedisError(error) => (error.to_string()).into_response(),
-            WeatherServiceErr::SerdeJSONErr(error) => (error.to_string()).into_response(),
+            WeatherServiceErr::Io(error) => {
+                error!("{:?}",error);
+                (error.to_string()).into_response()
+            },
+            WeatherServiceErr::VarErr(error) => {
+                error!("{:?}",error);
+                (error.to_string()).into_response()
+            },
+            WeatherServiceErr::ReqwestErr(error) => {
+                error!("{:?}",error);
+                (error.to_string()).into_response()
+            },
+            WeatherServiceErr::RedisError(error) => {
+                error!("{:?}",error);
+                (error.to_string()).into_response()
+            },
+            WeatherServiceErr::SerdeJSONErr(error) => {
+                error!("{:?}",error);
+                (error.to_string()).into_response()
+            },
             WeatherServiceErr::WebServerErr(web_server_err) => (
                     web_server_err.code,
                     Json(ErrorResponse{error_message: web_server_err.message.clone()})
