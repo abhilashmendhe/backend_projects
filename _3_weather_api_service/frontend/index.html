@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Api Service App</title>
+     <link href="src/style.css" rel="stylesheet">
+     <!-- <script src="src/main.js"></script> -->
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  </head>
+  <body>
+    <div class="h-screen w-screen">
+      <div class="grid place-items-center h-[23%] w-screen bg-black ">
+
+        <p class="text-4xl text-white font-stretch-ultra-expanded">Weather Map Points</p>
+        <div class="flex items-center justify-center space-x-4 text-sm">
+          <form id="formData">
+          <input type="text" name="city" id="city" placeholder="Enter city" class="bg-white border p-2 rounded-md" />
+            <span class="text-gray-200">or</span>
+            <input type="text" name="latitude" id="latitude" placeholder="Enter latitude" class="bg-white border p-2 rounded-md" />
+            <input type="text" name="longitude" id="longitude" placeholder="Enter longitude" class="bg-white border p-2 rounded-md" />
+            <input type="submit" value="Submit" class="bg-blue-500 text-white p-2 rounded-md">
+          </form>
+          <button id="clear-btn" class="bg-red-500 text-white p-2 rounded-md">Clear</button>
+        </div>
+      </div>
+      <div class="grid place-items-center  h-[75%] w-screen bg-orange-50">
+         <div id="map"></div>
+      </div>
+
+        <!-- <div id="map"></div> -->
+    </div>
+
+    <script src="src/main.js" type="module"></script>
+    <!-- <script src="src/load_cities.js"></script> -->
+  </body>
+</html>
