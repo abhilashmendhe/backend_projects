@@ -12,7 +12,14 @@ pub async fn geoadd(
     conn.geo_add::<String,(String,String,String),String>("location".to_string(), (
         lat.to_string(), 
         long.to_string(),
-        city_name)).await?;
+        city_name.to_lowercase())).await?;
     
+    // now check the ttl value of key location
+    let ttl = conn.ttl::<&str,i64>("location").await?;
+    // println!("ttl:{}",ttl);
+    // add a ttl value if less than 0
+    if ttl < 0 {
+        conn.expire::<&str, i64>("location", 600).await?;
+    } 
     Ok(())
 }
