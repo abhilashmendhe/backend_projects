@@ -9,6 +9,7 @@ pub mod routes;
 pub mod api_requests;
 pub mod models;
 pub mod queries;
+pub mod middleware;
 
 pub async fn run(
     addr: &str,
