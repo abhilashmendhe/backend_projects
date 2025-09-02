@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS nyc_restaurants(
     id SERIAL PRIMARY KEY,
     url TEXT,
     name TEXT,
-    rating NUMERIC,
+    rating DOUBLE PRECISION,
     rating_count INTEGER,
     detailed_ratings JSONB,
     price_category INTEGER,
