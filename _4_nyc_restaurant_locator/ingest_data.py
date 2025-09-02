@@ -8,11 +8,20 @@ df = pd.read_csv("./data/nyc_restaurants_gmaps.csv")
 table="nyc_restaurants"
 
 def clean_detailed_ratings(detailed_ratings:str):
-    # dr = detailed_ratings[1..(len(detailed_ratings-1))]
-    # dr=detailed_ratings.removeprefix('{')
-    # dr=dr.removesuffix('}')
-    return detailed_ratings.replace("\'","\"")
-
+    split_ratings=detailed_ratings[1:-1].split(",")
+    # print(split_ratings)
+    if len(split_ratings) <= 1:
+        return "{}"
+    news = "{"
+    for sr in split_ratings:
+        s_r_spl = sr.split(":")
+        r_name = s_r_spl[0].strip()[1:-1].strip()
+        form = f"\"{r_name}\":{s_r_spl[1].strip()}"
+        # print(form)
+        news +=form
+        news +=","
+    news = news[:-1] + "}"
+    return news
 try:
     conn = psycopg2.connect(
             database="restaurant_db",
@@ -58,3 +67,4 @@ try:
     conn.commit()
 except psycopg2.Error as e:
     print(f"Error connecting to PostgreSQL: {e}")
+
