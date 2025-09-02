@@ -15,7 +15,7 @@ async fn main() -> Result<(), WebError> {
 
     // 3. read vars from .env
     let host = std::env::var("HOST").unwrap_or("0.0.0.0".to_string());
-    let port = std::env::var("PORT").unwrap_or("8080".to_string());
+    let port = std::env::var("PORT").unwrap_or("3000".to_string());
     let address = format!("{}:{}",host,port);
 
     // 4. set up postgres conn
