@@ -8,9 +8,7 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(conn: PgPool) -> Self {
-        Self {
-            conn
-        }
+        Self { conn }
     }
 }
 
