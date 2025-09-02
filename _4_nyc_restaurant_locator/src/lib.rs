@@ -5,6 +5,8 @@ use crate::{routers::create_router, utils::{app_state::AppState, errors::WebErro
 
 pub mod utils;
 pub mod routers;
+pub mod routes;
+pub mod models;
 
 pub async fn run(
     address: String,
