@@ -1,21 +1,20 @@
-use std::sync::Arc;
+use std::sync::{atomic::AtomicUsize, Arc};
 
 use axum::extract::FromRef;
-use tokio::sync::Mutex;
 
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    pub visit_count: Arc<Mutex<u64>>
+    pub visit_count: Arc<AtomicUsize>
 }
 
 impl AppState {
     pub fn new() -> Self {
-        Self { visit_count: Arc::new(Mutex::new(0)) }
+        Self { visit_count: Arc::new(AtomicUsize::new(0)) }
     }
 }
 
-impl FromRef<AppState> for Arc<Mutex<u64>> {
+impl FromRef<AppState> for Arc<AtomicUsize> {
     fn from_ref(state: &AppState) -> Self {
         state.visit_count.clone()
     }
