@@ -11,10 +11,10 @@ pub async fn put_value(
     Json(preqkv): Json<PutRequestKV>
 ) -> StatusCode {
     let s = format!("key:`{}`, value:`{}`, timestamp:`{}`",&preqkv.key, &preqkv.value, &preqkv.timestamp);
-    info!(" ->> PUT   /api/v1 {:>4}{{{}}}","",s);
     {
         let mut tkv_gaurd = tkv.lock().await;
         tkv_gaurd.set(preqkv.key, preqkv.value, preqkv.timestamp);
     }
+    info!(" ->> PUT   /api/v1 {:>4}{{{}}}{:>2} 201 CREATED","",s,"");
     StatusCode::CREATED
 }

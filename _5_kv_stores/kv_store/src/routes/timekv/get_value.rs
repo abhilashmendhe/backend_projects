@@ -17,15 +17,16 @@ pub async fn get_value(
     Json(reqkv): Json<GetRequestKV>
 ) -> (StatusCode, Json<GetResponse>) {
     
-    info!(" ->> GET   /api/v1 {:>4}key:`{}`","",&reqkv.key);
     let value = {
         let tkv_lock_gaurd = tkv.lock().await;
-        tkv_lock_gaurd.get(reqkv.key, reqkv.timestamp)
+        tkv_lock_gaurd.get(reqkv.key.clone(), reqkv.timestamp)
     };
 
     if value.len() <= 0 {
+        info!(" ->> GET   /api/v1 {:>4}key:`{}`{:>2}404 NOT FOUND","",&reqkv.key,"");
         (StatusCode::NOT_FOUND, Json(GetResponse{value}))
     } else {
+        info!(" ->> GET   /api/v1 {:>4}key:`{}`{:>2}200 OK","",&reqkv.key,"");
         (StatusCode::OK, Json(GetResponse{value}))
     }
 }
