@@ -6,7 +6,7 @@ pub fn routers(app_state: AppState) -> Router {
 
     Router::new()
     
-        .route("/", get(get_value)
+        .route("/api/v1", get(get_value)
                                         .put(put_value))
 
         .route("/health", get(health_check))
