@@ -3,7 +3,7 @@ use std::sync::{atomic::AtomicUsize, Arc};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use tracing::info;
 
-use crate::routes::Health;
+use crate::routes::health::Health;
 
 pub async fn health_check(
     State(count): State<Arc<AtomicUsize>>
