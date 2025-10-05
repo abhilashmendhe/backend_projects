@@ -19,7 +19,7 @@ struct Args {
     ip_addr: String,
 
     /// Port
-    #[arg(long, default_value="8000")]
+    #[arg(long, default_value="58322")]
     port: String
 }
 
