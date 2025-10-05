@@ -15,11 +15,11 @@ use tracing::level_filters::LevelFilter;
 struct Args {
 
     /// IP Address
-    #[arg(long)]
+    #[arg(long, default_value="0.0.0.0")]
     ip_addr: String,
 
     /// Port
-    #[arg(long)]
+    #[arg(long, default_value="8000")]
     port: String
 }
 
