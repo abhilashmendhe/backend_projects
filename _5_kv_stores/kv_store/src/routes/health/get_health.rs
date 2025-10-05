@@ -9,13 +9,14 @@ pub async fn health_check(
     State(count): State<Arc<AtomicUsize>>
 ) -> impl IntoResponse {
 
+    info!("->> GET   /health");
     count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     let visit_count = count.load(std::sync::atomic::Ordering::SeqCst);
     let health = Health {
         message: "Up and running..".to_string(),
         visit_count
     };
-    info!("->> /health");
+    
     (
         StatusCode::OK,
         Json(health)
