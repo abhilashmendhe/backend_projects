@@ -9,3 +9,10 @@ pub struct GetRequestKV {
     pub key: String,
     pub timestamp: u64
 }
+
+#[derive(Debug, Deserialize)]
+pub struct PutRequestKV {
+    pub key: String,
+    pub value: String,
+    pub timestamp: u64
+}
