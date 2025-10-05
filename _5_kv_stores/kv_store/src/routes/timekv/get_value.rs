@@ -16,8 +16,8 @@ pub async fn get_value(
     State(tkv): State<Arc<Mutex<TimeBasedKV>>>,
     Json(reqkv): Json<GetRequestKV>
 ) -> (StatusCode, Json<GetResponse>) {
-
-    info!(" ->> GET   / {:>8}key:`{}`","",&reqkv.key);
+    
+    info!(" ->> GET   /api/v1 {:>4}key:`{}`","",&reqkv.key);
     let value = {
         let tkv_lock_gaurd = tkv.lock().await;
         tkv_lock_gaurd.get(reqkv.key, reqkv.timestamp)
