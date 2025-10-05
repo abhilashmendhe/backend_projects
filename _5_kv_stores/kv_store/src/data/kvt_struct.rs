@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct TimeBasedKV {
-    pub kv: HashMap<String, Vec<(i32, String)>>
+    pub kv: HashMap<String, Vec<(u64, String)>>
 }
 
 impl TimeBasedKV {
@@ -13,7 +13,7 @@ impl TimeBasedKV {
         }
     }
     
-    pub fn set(&mut self, key: String, value: String, timestamp: i32) {
+    pub fn set(&mut self, key: String, value: String, timestamp: u64) {
         
         if let Some(values) = self.kv.get_mut(&key) {
             values.push((timestamp, value));
@@ -25,34 +25,38 @@ impl TimeBasedKV {
         }
     }
     
-    pub fn get(&self, key: String, timestamp: i32) -> String {
+    pub fn get(&self, key: String, timestamp: u64) -> String {
 
+        let mut result = String::new();
         if let Some(values) = self.kv.get(&key) {
             
-            let mut low: i32 = 0;
-            let mut high: i32 = values.len() as i32 - 1;
+            let mut low = 0;
+            let mut high = values.len()  - 1;
 
-            while low <= high {
-                let mid = low + (high-low)/2;
-
-                if values[mid as usize].0 == timestamp {
-                    low = mid;
-                    break;
-                } else if values[mid as usize].0 < timestamp {
-                    low = mid + 1;
-                } else {
-
-                    high = mid - 1;
-                }
+            if timestamp < values[low].0 {
+                return result;
+            } else if timestamp > values[high].0 {
+                return values[high].1.clone();
             }
-
-            if high >= 0 && values[high as usize].0 <= timestamp {
-                return values[high as usize].1.to_string();
-            } else if low >= 0 && low < values.len() as i32 && values[low as usize].0 <= timestamp {
-                return values[low as usize].1.to_string();
-            }            
+            while low <= high {
+                let mid = (high+low)/2;
+                if values[mid].0 == timestamp {
+                    result = values[mid].1.clone();
+                    break;
+                } else if values[mid].0 <= timestamp {
+                    low = mid + 1;
+                    result = values[mid].1.clone();
+                } else {
+                    match mid.checked_sub(1) {
+                        Some(res) => {
+                            high = res;
+                        },
+                        None => break,
+                    }
+                }
+            } 
         }
-        "".to_string()
+        result
     }
 
 }
