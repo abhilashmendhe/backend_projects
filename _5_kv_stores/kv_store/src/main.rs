@@ -3,7 +3,7 @@ To run:
     $ cargo watch -q -c -w src/ -x run
 */
 
-use kv_store::{run, utils::{app_state::AppState, errors::KVError}};
+use kv_store::{run, utils::{app_state::AppState, errors::KVError, read_logs::read_logs}};
 use clap::Parser;
 use tracing::level_filters::LevelFilter;
 
@@ -41,6 +41,9 @@ async fn main() -> Result<(), KVError> {
     // 3. Initialize state
     let app_state = AppState::new();
 
+    // 4. Read log files
+    let _ = read_logs(app_state.kv_store.clone()).await;
+    
     run(app_state, &addr).await?;
 
     Ok(())
