@@ -34,6 +34,87 @@ The KV-store can support/store multiple `values` for a specific `key` based on t
 
 ## Getting started
 
+#### Prerequisites
+- [Python](https://www.python.org/downloads/)
+- [Rust](https://www.rust-lang.org/tools/install)
+- [Cargo](https://doc.rust-lang.org/cargo/)
+
+#### Install packages
+
+1. **Setup Python environment and install Python packages**
+```bash
+# 1. Clone the repo
+$ git clone https://github.com/abhilashmendhe/backend_projects/tree/main/_5_kv_stores
+$ cd _5_kv_stores
+
+# 2. Go to api_gateway folder (Python based)
+$ cd api_gateway
+
+# 3. Create virtual environment
+$ python -m venv venv
+
+# 4. Activate virtual environment
+$ source venv/bin/activate
+
+# 5. Install pip packages from requirements.txt file
+$ pip install -r requirements.txt
+
+```
+
+2. **Setup Rust**
+```bash
+# 1. Clone the repo
+$ git clone https://github.com/abhilashmendhe/backend_projects/tree/main/_5_kv_stores
+$ cd _5_kv_stores
+
+# 2. Go to kv_store folder (Rust based)
+$ cd kv_store
+
+# 3. Build
+$ cargo build
+
+```
+
+#### Execution
+
+1. **Run Key-Value Store (Rust) Server**
+```bash
+# 1. Clone the repo
+$ git clone https://github.com/abhilashmendhe/backend_projects/tree/main/_5_kv_stores
+$ cd _5_kv_stores
+
+# 2. Go to kv_store folder (Rust based)
+$ cd kv_store
+
+# 3. Run
+$ cargo run -- --ip-addr 0.0.0.0 --port 58322
+🚀 Timestore KV Started listening on `0.0.0.0:58322`
+
+
+```
+
+1. **Run API gateway (Python)**
+```bash
+# 1. Clone the repo
+$ git clone https://github.com/abhilashmendhe/backend_projects/tree/main/_5_kv_stores
+$ cd _5_kv_stores
+
+# 2. Go to api_gateway folder (Python based)
+$ cd api_gateway
+
+# 3. Run
+$ KV_SERVICE_URL="http://0.0.0.0:58322/api/v1" \
+  uvicorn main:app --host 0.0.0.0 --port 8000
+
+INFO:     Started server process [185394]
+INFO:     Waiting for application startup.
+🚀 Starting up....
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+
+```
+
+
 ---  
 
 ## Example Requests (with `curl`)
