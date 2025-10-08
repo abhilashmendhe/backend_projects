@@ -1,6 +1,6 @@
 # Run -> $ KV_SERVICE_URL="http://0.0.0.0:58322/api/v1" uvicorn main:app --host 0.0.0.0 --port 8000 --workers 2 --reload
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import httpx
 from walstruct import WALKVStore
