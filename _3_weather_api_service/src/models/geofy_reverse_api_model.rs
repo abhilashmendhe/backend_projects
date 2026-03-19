@@ -10,7 +10,7 @@ pub struct GeofyAPIModel {
 pub struct GeofyResult {
     pub country:         String,
     pub city:            String,
-    pub postcode:        String,
+    pub postcode:        Option<String>,
     pub lon:             f64,
     pub lat:             f64,
     pub state:           String,

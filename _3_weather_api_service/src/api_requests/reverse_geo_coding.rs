@@ -12,7 +12,7 @@ pub async fn reverse_geocoding(
     let result = reqwest::get(url)
         .await
         .map_err(|err|{
-            error!("{:?}",err);
+            error!("Error src/api_requests/reverse_geo_coding.rs: {:?}",err);
             WeatherServiceErr::WebServerErr(
                 WebServerErr::new(
                     StatusCode::NOT_FOUND, 
