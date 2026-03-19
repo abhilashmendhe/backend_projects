@@ -23,7 +23,10 @@ pub enum WeatherServiceErr {
     SerdeJSONErr(#[from] serde_json::Error),
     
     #[error("Web Server Error")]
-    WebServerErr(WebServerErr)
+    WebServerErr(WebServerErr), 
+
+    #[error("Parsing Error: {0}")]
+    ParseIntErr(#[from] std::num::ParseIntError),
 }   
 
 
@@ -84,6 +87,10 @@ impl IntoResponse for WeatherServiceErr {
                     web_server_err.code,
                     Json(ErrorResponse{error_message: web_server_err.message.clone()})
                 ).into_response(),
+            WeatherServiceErr::ParseIntErr(error) => {
+                error!("{:?}",error);
+                (error.to_string()).into_response()
+            }
         }
     }
 }
