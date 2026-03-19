@@ -37,7 +37,7 @@ pub async fn get_weather_by_location(
         super::location_extractor::Loc::TEXT(city) => {
             match conn   
                 // 1.2.1 first check if redis contains the key
-                .get::<&str, String>(&city)
+                .get::<&str, String>(&city.to_lowercase())
                 .await {
                     Ok(api_weather) => {
                         let api_weather_json = serde_json::from_str::<WeatherAPIModel>(&api_weather)?;
@@ -78,12 +78,13 @@ pub async fn get_weather_by_location(
                     long, 
                     config.geofy_key()
                 ).await?;
+                info!("Reverse geo done");
                 let geofy_loc_json = serde_json::from_str::<GeofyAPIModel>(&geofy_loc_info)?;
-                
                 let found_city = if geofy_loc_json.results.len() > 0 {
                     let results = geofy_loc_json.results;
                     let first_result = results[0].clone();
-                    first_result.city
+                    // first_result.city
+                    format!("{},{}",first_result.city,first_result.country)
                 } else {
                     return Err(WeatherServiceErr::WebServerErr(WebServerErr::new(
                         StatusCode::INTERNAL_SERVER_ERROR, 
@@ -95,7 +96,7 @@ pub async fn get_weather_by_location(
         },
     };
     
-    
+    // println!("City name: {}", city_name.clone());
     // 3. If not, then fetch from the api
     let api_weather = get_today_weather(
             config.weather_api_key(), 
@@ -103,7 +104,7 @@ pub async fn get_weather_by_location(
             unit
         ).await
         .map_err(|err| {
-            error!("{:?}",err);
+            error!("Error getting weather {:?}",err);
             WeatherServiceErr::WebServerErr(WebServerErr::new(
                 StatusCode::INTERNAL_SERVER_ERROR, 
                 "Failed to decode/fetch the weather result"))
