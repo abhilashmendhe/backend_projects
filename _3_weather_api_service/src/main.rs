@@ -28,8 +28,11 @@ async fn main() -> Result<(), WeatherServiceErr> {
     let weather_api_key = std::env::var("VISUAL_CROSSING_KEY")?;
     let geofy_key = std::env::var("GEOAPIFY_KEY")?;
 
+    let rate_limit = std::env::var("RATE_LIMIT_SIZE").unwrap_or("5".to_string());
+    let rate_limit_num = rate_limit.parse::<u32>()?;
+
     // 4. Init Config
-    let config = Config::new(weather_api_key, geofy_key);
+    let config = Config::new(weather_api_key, geofy_key, rate_limit_num);
 
     let client = redis::Client::open(redis_addr)  ?;
     let conn;
