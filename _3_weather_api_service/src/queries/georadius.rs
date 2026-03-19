@@ -1,9 +1,10 @@
 use redis::{aio::MultiplexedConnection, geo::{RadiusOptions, RadiusOrder, RadiusSearchResult}, AsyncCommands};
 
-use crate::utils::errors::WeatherServiceErr;
+use crate::utils::{errors::WeatherServiceErr};
 
 pub async fn geo_radius(
     mut conn: MultiplexedConnection,
+    geo_radius: f64,
     lat: f64,
     long: f64
 ) -> Result<Vec<RadiusSearchResult>, WeatherServiceErr> {
@@ -13,7 +14,7 @@ pub async fn geo_radius(
             "location", 
             lat, 
             long, 
-            3.0, 
+            geo_radius, 
             redis::geo::Unit::Kilometers,
             radius_opts
         ).await?;

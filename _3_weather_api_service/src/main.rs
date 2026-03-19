@@ -31,10 +31,13 @@ async fn main() -> Result<(), WeatherServiceErr> {
     let rate_limit = std::env::var("RATE_LIMIT_SIZE").unwrap_or("5".to_string());
     let rate_limit_num = rate_limit.parse::<u32>()?;
 
+    let geo_radius_search = std::env::var("LOCATION_RADIUS")
+                        .unwrap_or("3".to_string())
+                        .parse::<f64>()?;
     // 4. Init Config
-    let config = Config::new(weather_api_key, geofy_key, rate_limit_num);
+    let config = Config::new(weather_api_key, geofy_key, rate_limit_num, geo_radius_search);
 
-    let client = redis::Client::open(redis_addr)  ?;
+    let client = redis::Client::open(redis_addr)?;
     let conn;
 
     loop {

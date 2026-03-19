@@ -27,6 +27,9 @@ pub enum WeatherServiceErr {
 
     #[error("Parsing Error: {0}")]
     ParseIntErr(#[from] std::num::ParseIntError),
+
+    #[error("Parsing Float Error: {0}")]
+    ParseFloatErr(#[from] std::num::ParseFloatError)
 }   
 
 
@@ -88,6 +91,10 @@ impl IntoResponse for WeatherServiceErr {
                     Json(ErrorResponse{error_message: web_server_err.message.clone()})
                 ).into_response(),
             WeatherServiceErr::ParseIntErr(error) => {
+                error!("{:?}",error);
+                (error.to_string()).into_response()
+            },
+            WeatherServiceErr::ParseFloatErr(error) => {
                 error!("{:?}",error);
                 (error.to_string()).into_response()
             }

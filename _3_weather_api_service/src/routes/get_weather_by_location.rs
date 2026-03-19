@@ -54,6 +54,7 @@ pub async fn get_weather_by_location(
         // 1.2.1 first check if redis contains the key
             let result = geo_radius(
                 conn.clone(), 
+                config.geo_radius(),
                 lat, 
                 long
             ).await?;
