@@ -19,7 +19,7 @@ impl AppState {
     pub fn new(config: Config, conn: MultiplexedConnection) -> Self {
         let running = Instant::now();
         let visit_count = Arc::new(AtomicU32::new(0));
-        let rate_limit = Arc::new(Mutex::new(RateLimit::new()));
+        let rate_limit = Arc::new(Mutex::new(RateLimit::new(config.rate_limit_requests())));
         AppState { visit_count, running, config, conn, rate_limit }
     }
 }

@@ -20,7 +20,7 @@ pub async fn rate_limit(
             rate_limit_gaurd.time = Instant::now();
             rate_limit_gaurd.count = 0;
         } else {
-            if rate_limit_gaurd.count > 5 {
+            if rate_limit_gaurd.count > rate_limit_gaurd.limit_req {
                 // return too many requests
                 // println!("too many requests");
                 return Err(
