@@ -1,37 +1,31 @@
+version: "3.9"
+
 services:
   postgis:
-    image: postgis/postgis
+    image: postgis/postgis:15-3.4
     container_name: postgis
-    restart: always 
+    restart: unless-stopped
+
     environment:
       POSTGRES_USER: postgis
       POSTGRES_PASSWORD: postgis123
+      POSTGRES_DB: postgis
+
     ports:
       - "5432:5432"
+
     volumes:
+      # Persistent database
       - postgis_data:/var/lib/postgresql/data
-      - ./data/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+      # Init scripts (runs ONLY on first startup)
+      - ./data:/docker-entrypoint-initdb.d:ro,Z
+
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgis"]
+      test: ["CMD-SHELL", "pg_isready -U postgis"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 5s
-  
-  db-init:
-    image: postgis/postgis
-    depends_on:
-      postgis:
-        condition: service_healthy
-    volumes:
-      - ./data/init.sql:/init.sql:ro
-    entrypoint: >
-      bash -c "
-        echo 'Running init.sql...';
-        PGPASSWORD=postgis123 psql -h postgis -U postgis -f /init.sql;
-        echo 'Done running init.sql';
-      "
-    restart: "no"
 
 volumes:
   postgis_data:
