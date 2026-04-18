@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  database:
+    container_name: postgresql
+    image: postgres:16
+    volumes:
+      - db-data:/var/lib/postgresql/data   # ✅ correct for v16
+      - ./database:/docker-entrypoint-initdb.d:ro,Z
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password123
+      - POSTGRES_DB=expensesdb
+    ports:
+      - 5433:5432
+
+volumes:
+  db-data:
