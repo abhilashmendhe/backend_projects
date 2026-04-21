@@ -56,7 +56,7 @@ pub async fn account_activate(
     // 3. Run UPDATE query
     let user = sqlx::query_as!(UserActivate,
         r#"
-        UPDATE users SET deleted_at=NULL where username=$1
+        UPDATE users SET deleted_at=NULL,created_at=Now(),token=NULL where username=$1
         RETURNING id, username, email
         "#,
         username

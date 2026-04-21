@@ -8,6 +8,7 @@ pub mod login;
 pub mod logout;
 pub mod update_password;
 pub mod activate_acc;
+pub mod user_midd_extractor;
 
 #[derive(Debug, Deserialize)]
 pub struct RequestUser {
