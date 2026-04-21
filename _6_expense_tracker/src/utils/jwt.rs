@@ -10,7 +10,7 @@ pub struct Claims {
     username: String
 }
 
-pub async fn create_token(
+pub fn create_token(
     secret: &str, 
     username: String
 ) -> Result<String, ExpenseTrackerErr> {
@@ -29,7 +29,7 @@ pub async fn create_token(
         })
 }
 
-pub async fn validate_token(
+pub fn validate_token(
     secret: &str,
     token: &str
 ) -> Result<bool, ExpenseTrackerErr> {
