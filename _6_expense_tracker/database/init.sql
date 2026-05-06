@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     description TEXT, 
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
+    expense_date TIMESTAMPTZ NOT NULL,
 
     CONSTRAINT fk_expenses_user 
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
