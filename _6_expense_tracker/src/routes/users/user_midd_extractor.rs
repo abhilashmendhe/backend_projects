@@ -9,6 +9,7 @@ impl FromRequest for UserModel {
     type Future = Ready<Result<Self, Self::Error>>;
 
     fn from_request(req: &actix_web::HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
+        // tracing::info!("Called mid extractor");
         let binding = req.extensions();
         let user = binding.get::<UserModel>();
         match user {

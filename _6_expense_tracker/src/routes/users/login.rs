@@ -17,6 +17,7 @@ pub struct LoginRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct FetchUserInfo {
+    id: i32,
     password: String,
     created_at: DateTime<Utc>,
     token: Option<String>,
@@ -24,6 +25,7 @@ pub struct FetchUserInfo {
 
 #[derive(Debug, Serialize)]
 pub struct LoginResponse {
+    id: i32,
     username: String,
     created_at: DateTime<Utc>,
     token: Option<String>,
@@ -46,7 +48,7 @@ pub async fn login(
     // 2. fetch hashed_password from db
     let login_user_resp = sqlx::query_as!(
         FetchUserInfo,
-        r#"SELECT password, created_at as "created_at!", token FROM users WHERE deleted_at IS NULL and username=$1"#,
+        r#"SELECT id, password, created_at as "created_at!", token FROM users WHERE deleted_at IS NULL and username=$1"#,
         username
     ).fetch_one(&app_state.pool)
     .await
@@ -71,6 +73,7 @@ pub async fn login(
         };
         if f {
             let login_resp = LoginResponse {
+                id: login_user_resp.id,
                 username: username.to_string(),
                 created_at: login_user_resp.created_at,
                 token: Some(token_value),
@@ -102,6 +105,7 @@ pub async fn login(
         })?;
 
     let login_resp = LoginResponse {
+        id: login_user_resp.id,
         username: username.to_string(),
         created_at: login_user_resp.created_at,
         token: Some(new_token),

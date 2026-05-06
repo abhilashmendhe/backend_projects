@@ -61,7 +61,7 @@ pub fn users_view_factory(app: &mut ServiceConfig) {
             // 🔐 Protected routes
             .service(
                 // web::resource("/{id}")
-                web::resource("")
+                web::resource("/{id}")
                     .wrap(from_fn(require_auth))
                     .route(web::delete().to(delete_user))
                     .route(web::get().to(get_user)),

@@ -11,7 +11,7 @@ pub async fn get_user(
     req_path: web::Path<i32>,
 ) -> Result<HttpResponse, ExpenseTrackerErr> {
     let id = req_path.into_inner();
-
+    // println!("Path id: {}", id);
     if id != user.id {
         return Err(ExpenseTrackerErr::AppError(AppError::new(
             StatusCode::NOT_FOUND,
