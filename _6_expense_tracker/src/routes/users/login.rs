@@ -2,41 +2,45 @@ use actix_web::{HttpResponse, http::StatusCode, web};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::utils::{app_state::AppState, errors::{AppError, ExpenseTrackerErr}, hash_helper::verify_hash_password, jwt::{create_token, validate_token}};
+use crate::utils::{
+    app_state::AppState,
+    errors::{AppError, ExpenseTrackerErr},
+    hash_helper::verify_hash_password,
+    jwt::{create_token, validate_token},
+};
 
 #[derive(Debug, Deserialize)]
 pub struct LoginRequest {
-    username: String, 
-    password: String, 
+    username: String,
+    password: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct FetchUserInfo {
-    password: String, 
+    password: String,
     created_at: DateTime<Utc>,
-    token: Option<String>
+    token: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct LoginResponse {
-    username: String, 
+    username: String,
     created_at: DateTime<Utc>,
-    token: Option<String>
+    token: Option<String>,
 }
 
 pub async fn login(
     app_state: web::Data<AppState>,
-    user_req: web::Json<LoginRequest>
+    user_req: web::Json<LoginRequest>,
 ) -> Result<HttpResponse, ExpenseTrackerErr> {
-
     // 1. Check
     let username = user_req.username.trim();
     let password = user_req.password.trim();
     if username.eq("") || password.eq("") {
         return Err(ExpenseTrackerErr::AppError(AppError::new(
             StatusCode::BAD_REQUEST,
-            "Username, password and/or email cannot be empty.\nPlease try again later."
-        )))
+            "Username, password and/or email cannot be empty.\nPlease try again later.",
+        )));
     }
 
     // 2. fetch hashed_password from db
@@ -74,7 +78,7 @@ pub async fn login(
             return Ok(HttpResponse::Ok().json(login_resp));
         }
     }
-    
+
     // 4. Generate token and update user in db
     let new_token = create_token(&app_state.config.secret(), username.to_string())?;
     sqlx::query(r#"UPDATE users SET token=$1 WHERE username=$2"#)
@@ -83,13 +87,19 @@ pub async fn login(
         .execute(&app_state.pool)
         .await
         .map_err(|err| {
-            tracing::error!("Error fetching user: {:?}",err);
+            tracing::error!("Error fetching user: {:?}", err);
             // println!("{:?}",);
             if let None = err.as_database_error() {
-                return ExpenseTrackerErr::AppError(AppError::new(StatusCode::NOT_FOUND, "User not found!"));
+                return ExpenseTrackerErr::AppError(AppError::new(
+                    StatusCode::NOT_FOUND,
+                    "User not found!",
+                ));
             }
-            ExpenseTrackerErr::AppError(AppError::new(StatusCode::INTERNAL_SERVER_ERROR, "INTERNAL SERVER ERROR"))
-        })?;    
+            ExpenseTrackerErr::AppError(AppError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "INTERNAL SERVER ERROR",
+            ))
+        })?;
 
     let login_resp = LoginResponse {
         username: username.to_string(),

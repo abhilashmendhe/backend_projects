@@ -1,7 +1,7 @@
 #[derive(Debug)]
 pub struct Config {
     db_url: String,
-    secret: String
+    secret: String,
 }
 
 impl Config {

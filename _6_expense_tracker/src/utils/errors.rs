@@ -2,17 +2,16 @@ use actix_web::{HttpResponse, ResponseError, body::BoxBody, http::StatusCode};
 use serde::Serialize;
 use thiserror::Error;
 
-
 #[derive(Debug, Error)]
 pub enum ExpenseTrackerErr {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
-    
+
     #[error("VarError: {0}")]
     VarError(#[from] std::env::VarError),
 
     #[error("Application Error")]
-    AppError(AppError)
+    AppError(AppError),
 }
 
 #[derive(Serialize)]
@@ -23,21 +22,24 @@ struct ErrorResponse {
 #[derive(Debug)]
 pub struct AppError {
     code: StatusCode,
-    message: String
+    message: String,
 }
 
 impl AppError {
     pub fn new(code: StatusCode, message: impl Into<String>) -> Self {
-        AppError { code, message: message.into() }
+        AppError {
+            code,
+            message: message.into(),
+        }
     }
 }
 
 impl ResponseError for ExpenseTrackerErr {
     fn status_code(&self) -> StatusCode {
         match self {
-            ExpenseTrackerErr::Io(_) =>  StatusCode::INTERNAL_SERVER_ERROR,
+            ExpenseTrackerErr::Io(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ExpenseTrackerErr::VarError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            ExpenseTrackerErr::AppError(app_error) => app_error.code
+            ExpenseTrackerErr::AppError(app_error) => app_error.code,
         }
     }
 
@@ -66,4 +68,3 @@ impl ResponseError for ExpenseTrackerErr {
 //             .body(body)
 //     }
 // }
-
