@@ -11,7 +11,7 @@ use tracing::level_filters::LevelFilter;
 async fn main() -> Result<(), ExpenseTrackerErr> {
     // 1. enable tracing.
     tracing_subscriber::fmt()
-        .with_max_level(LevelFilter::DEBUG)
+        .with_max_level(LevelFilter::INFO)
         .init();
 
     // 2. Load .env variables
@@ -29,7 +29,7 @@ async fn main() -> Result<(), ExpenseTrackerErr> {
         .await
     {
         Ok(pool) => {
-            println!("✅ Connection to DB is succesfull!");
+            tracing::info!("✅ Connection to DB is succesfull!");
             pool
         }
         Err(err) => {

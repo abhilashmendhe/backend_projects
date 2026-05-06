@@ -29,7 +29,7 @@ pub async fn require_auth(
             .into());
         }
     };
-
+    // println!("{:?}",req);
     if let None = req.headers().get("authorization") {
         return Err(ExpenseTrackerErr::AppError(AppError::new(
             StatusCode::UNAUTHORIZED,
@@ -62,10 +62,11 @@ pub async fn require_auth(
     }
 
     let token = auth_header_token.trim_start_matches("Bearer ").trim();
-
+    // println!("Secret: {}", app_data.config.secret());
+    // println!("Token: {}", token);
     validate_token(app_data.config.secret(), token)?;
 
-    println!("Done validation in JWT Auth. Now fetch user");
+    tracing::info!("Done validation in JWT Auth. Now fetch user");
     let user = sqlx::query_as!(UserModel, r#"SELECT * FROM users WHERE token=$1"#, token)
         .fetch_one(&app_data.pool)
         .await

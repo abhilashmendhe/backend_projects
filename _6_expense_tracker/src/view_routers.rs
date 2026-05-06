@@ -7,7 +7,7 @@ use actix_web::{
 use serde::Serialize;
 
 use crate::{
-    routes::users::users_view_factory,
+    routes::sub_views_factory,
     utils::{app_state::AppState, errors::ExpenseTrackerErr},
 };
 
@@ -15,7 +15,7 @@ pub fn views_factory(app: &mut ServiceConfig) {
     app.service(
         scope("/v1")
             .route("/health-check", web::get().to(health_check))
-            .configure(users_view_factory),
+            .configure(sub_views_factory),
     );
 }
 
