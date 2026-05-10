@@ -3,7 +3,13 @@ use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::types::BigDecimal;
 
-use crate::{models::users_model::UserModel, utils::{app_state::AppState, errors::{AppError, ExpenseTrackerErr}}};
+use crate::{
+    models::users_model::UserModel,
+    utils::{
+        app_state::AppState,
+        errors::{AppError, ExpenseTrackerErr},
+    },
+};
 
 #[derive(Debug, Deserialize)]
 pub struct ExpenseRequest {
@@ -15,26 +21,26 @@ pub struct ExpenseRequest {
 
 #[derive(Debug, Serialize)]
 pub struct CategoryId {
-    pub id: i32
+    pub id: i32,
 }
 
 #[derive(Debug, Serialize)]
 pub struct ExpenseExpectedResponse {
     pub id: i32,
     pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct ExpenseResponse {
     id: i32,
-    user_id: i32,  
-    category_id: i32, 
-    amount: BigDecimal, 
-    description: String, 
+    user_id: i32,
+    category_id: i32,
+    amount: BigDecimal,
+    description: String,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
-    expense_date: NaiveDate
+    expense_date: NaiveDate,
 }
 
 pub async fn create_expense(
@@ -42,16 +48,14 @@ pub async fn create_expense(
     expense_req: web::Json<ExpenseRequest>,
     app_state: web::Data<AppState>,
 ) -> Result<HttpResponse, ExpenseTrackerErr> {
-
     // 1. Check if responses are null
-    let category_name  = expense_req.category_name.trim();
+    let category_name = expense_req.category_name.trim();
     let description = expense_req.description.trim();
     if category_name.eq("") || description.eq("") {
-        return Err(ExpenseTrackerErr::AppError(
-            AppError::new(
-                StatusCode::BAD_REQUEST, 
-                "Category name or description can't be empty!")
-        ));
+        return Err(ExpenseTrackerErr::AppError(AppError::new(
+            StatusCode::BAD_REQUEST,
+            "Category name or description can't be empty!",
+        )));
     }
 
     // 1. make insertion in categories table
@@ -63,7 +67,8 @@ pub async fn create_expense(
         "#,
         category_name,
         user.id
-    ).fetch_one(&app_state.pool)
+    )
+    .fetch_one(&app_state.pool)
     .await
     .map_err(|err| {
         tracing::error!("Error inserting into table `categories`: {:?}", err);
@@ -74,7 +79,9 @@ pub async fn create_expense(
     })?;
 
     let expense_date = DateTime::<Utc>::from_naive_utc_and_offset(
-    expense_req.expense_date.and_hms_opt(0, 0, 0).unwrap(),Utc);
+        expense_req.expense_date.and_hms_opt(0, 0, 0).unwrap(),
+        Utc,
+    );
 
     // expense_req.expense_date.
     // 2. make insertion in expense table
@@ -90,7 +97,8 @@ pub async fn create_expense(
         expense_req.amount,
         expense_req.description.clone(),
         expense_date
-    ).fetch_one(&app_state.pool)
+    )
+    .fetch_one(&app_state.pool)
     .await
     .map_err(|err| {
         tracing::error!("Error inserting into table `expenses`: {:?}", err);
