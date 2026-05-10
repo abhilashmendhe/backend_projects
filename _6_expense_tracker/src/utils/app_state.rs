@@ -16,7 +16,7 @@ pub enum CategoriesE {
     Health,
     Travel,
     Misc,
-    UNSET
+    UNSET,
 }
 
 impl From<String> for CategoriesE {
@@ -30,7 +30,7 @@ impl From<String> for CategoriesE {
             "health" => CategoriesE::Health,
             "travel" => CategoriesE::Travel,
             "misc" | "miscellaneous" => CategoriesE::Misc,
-            _ => CategoriesE::UNSET
+            _ => CategoriesE::UNSET,
         }
     }
 }
@@ -40,7 +40,7 @@ pub struct AppState {
     pub service_up: Instant,
     pub config: Config,
     pub pool: PgPool,
-    pub categories_e: CategoriesE
+    pub categories_e: CategoriesE,
 }
 
 impl AppState {
@@ -50,7 +50,7 @@ impl AppState {
             service_up: Instant::now(),
             config,
             pool,
-            categories_e: CategoriesE::UNSET
+            categories_e: CategoriesE::UNSET,
         }
     }
 }
