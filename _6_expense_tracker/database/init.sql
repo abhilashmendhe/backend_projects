@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     user_id INT NOT NULL,
     category_id INT NOT NULL, 
     amount DECIMAL(10,2) NOT NULL, 
-    description TEXT, 
+    description TEXT NOT NULL, 
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     expense_date TIMESTAMPTZ NOT NULL,
