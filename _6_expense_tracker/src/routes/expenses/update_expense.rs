@@ -59,6 +59,6 @@ pub async fn update_expense(
             "Failed to update table",
         ))
     })?;
-    
+
     Ok(HttpResponse::Ok().body("Updated expense".to_string()))
 }
