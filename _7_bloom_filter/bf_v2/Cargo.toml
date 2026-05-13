@@ -1,0 +1,7 @@
+[package]
+name = "bf_v2"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+mm3h = "0.1.3"
