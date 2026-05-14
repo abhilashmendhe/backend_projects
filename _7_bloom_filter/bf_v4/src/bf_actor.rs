@@ -1,4 +1,6 @@
-use tokio::{fs::File, io::AsyncWriteExt, sync::mpsc};
+use std::{fs::File, io::Write};
+
+use tokio::sync::mpsc;
 
 use crate::{bf::BFCommand, errors::BFError};
 
@@ -44,7 +46,7 @@ impl BloomFilterActor {
         true
     }
 
-    pub async fn save(&self, path: &str) -> Result<(), BFError> {
+    pub fn save(&self, path: &str) -> Result<(), BFError> {
         let mut packed = vec![];
         let mut byte = 0;
         for (i, b) in self.bit_arr.iter().enumerate() {
@@ -57,10 +59,11 @@ impl BloomFilterActor {
         if packed.len() % 8 != 0 {
             packed.push(byte);
         }
-        let mut file = File::create("bits.bin").await?;
+        let mut file = File::create(path)?;
         let bit_count = packed.len() as u32;
-        file.write_all(&bit_count.to_le_bytes()).await?;
-        file.write_all(&packed).await?;
+        file.write_all(&bit_count.to_le_bytes())?;
+        file.write_all(&packed)?;
+        file.flush()?;
         Ok(())
     }
 
@@ -72,7 +75,7 @@ impl BloomFilterActor {
                     let f = self.query(&item);
                     sender.send((item, f)).unwrap();
                 }
-                BFCommand::SAVE(path) => self.save(&path).await?,
+                BFCommand::SAVE(path) => self.save(&path)?,
             }
         }
         Ok(())
