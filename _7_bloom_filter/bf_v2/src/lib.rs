@@ -24,9 +24,10 @@ impl BloomFilter {
 
     fn locations(&self, item: &str) -> Vec<usize> {
         let mut positions = vec![];
-        let h1 = mm3h::murmurhash2_64(item.as_bytes()) as u128;
+        let h1 = mm3h::murmurhash2_64_with_seed(item.as_bytes(),0) as u128;
+        let h2 = mm3h::murmurhash2_64_with_seed(item.as_bytes(),1) as u128;
         for i in 0..self.k {
-            let pos = (h1 + (i as u128 * h1)) % self.m as u128;
+            let pos = (h1 + (i as u128 * h2)) % self.m as u128;
             positions.push(pos as usize);
         }
         positions
