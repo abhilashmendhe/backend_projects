@@ -32,10 +32,12 @@ impl BloomFilter {
         Ok(values)
     }
 
-    pub async fn spawn(n: u64, p: f64, num_workers: usize) -> Result<Self, BFError> {
+    pub async fn spawn(n: u64, p: f64, num_workers: usize, data_path: Option<&str>) -> Result<Self, BFError> {
         let (tx, rx) = tokio::sync::mpsc::channel(num_workers);
+        let mut bf_a = BloomFilterActor::new(n, p, data_path, rx,);
         let worker = tokio::spawn(async move {
-            BloomFilterActor::new(n, p, rx).run().await?;
+            // BloomFilterActor::new(n, p, rx).run().await?;
+            bf_a.run().await?;
             Ok::<(), BFError>(())
         });
         let _ = worker;
