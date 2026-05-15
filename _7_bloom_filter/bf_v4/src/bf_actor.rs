@@ -13,10 +13,16 @@ pub struct BloomFilterActor {
 }
 
 impl BloomFilterActor {
-    pub fn new(n: u64, p: f64, rx: mpsc::Receiver<BFCommand>) -> Self {
-        let m = ((-(n as f64) * p.ln()) / (2f64.ln().powi(2))).ceil() as u64;
-        let k = (((m as f64 / n as f64) * (2_f64).ln()).round() as u64).max(1);
-        let bit_arr = vec![0 as u8; m as usize];
+    pub fn new(n: u64, p: f64, data_path: Option<&str>, rx: mpsc::Receiver<BFCommand>) -> Self {
+
+        let (m, k, bit_arr) = if let Some(path) = data_path {
+            BloomFilterActor::read_data_file(path)
+        } else {
+            let m = ((-(n as f64) * p.ln()) / (2f64.ln().powi(2))).ceil() as u64;
+            let k = (((m as f64 / n as f64) * (2_f64).ln()).round() as u64).max(1);
+            let bit_arr = vec![0 as u8; m as usize];
+            (m, k, bit_arr)
+        };
         Self { m, k, bit_arr, rx }
     }
 
@@ -51,22 +57,83 @@ impl BloomFilterActor {
         let mut byte = 0;
         for (i, b) in self.bit_arr.iter().enumerate() {
             byte = byte | (b << (i % 8));
+            // println!("{byte}");
             if i % 8 == 7 {
                 packed.push(byte);
                 byte = 0;
             }
         }
-        if packed.len() % 8 != 0 {
+
+        if self.bit_arr.len() % 8 != 0 {
             packed.push(byte);
         }
         let mut file = File::create(path)?;
+
+        // 1. write magic number "BLOOM"
+        file.write_all(b"BLOOM")?;
+
+        // 2. write version number
+        file.write_all(&1u32.to_le_bytes())?;
+
+        // 3. write M 
+        file.write_all(&self.m.to_le_bytes())?;
+
+        // 4. write K
+        file.write_all(&self.k.to_le_bytes())?;
+
+        // 5. now write the bit-count of packed bits
         let bit_count = packed.len() as u32;
         file.write_all(&bit_count.to_le_bytes())?;
+
+        // 6. now write the actual packed bits in a file
         file.write_all(&packed)?;
         file.flush()?;
         Ok(())
     }
 
+    pub fn read_data_file(path: &str) -> (u64, u64, Vec<u8>) {
+        let data = std::fs::read(path).unwrap();
+
+        // 1. read the magic number and check if it's the correct number
+        let magic_bytes = &data[0..5];
+
+        if magic_bytes != b"BLOOM" {
+            panic!("Invalid bloom filter data file!");
+        }
+
+        // 2. read the version number, and check
+        let ver_bytes = &data[5..9];
+        let version = u32::from_le_bytes(ver_bytes.try_into().unwrap());
+        if version != 1 {
+            panic!("Invalid version number");
+        }
+
+        // 3. read the `m` value
+        let m_bytes = &data[9..17];
+        let m = u64::from_le_bytes(m_bytes.try_into().unwrap());
+        // println!("m: {}", m);
+
+        //4. read the `k` value
+        let k_bytes = &data[17..25];
+        let k = u64::from_le_bytes(k_bytes.try_into().unwrap());
+        // println!("k: {}", k);
+
+        // 5. now read the packed bit vec size
+        let bit_count_bytes = &data[25..29];
+        let _bit_count = u32::from_le_bytes(bit_count_bytes.try_into().unwrap());
+
+        let packed = &data[29..];
+        let mut bits = vec![];
+        for p in packed{
+            let vv = (0..8).map(|n| (p >> n) & 1).collect::<Vec<u8>>();
+            bits.extend(vv);
+        }
+
+        if bits.len() as u64 != m {
+            panic!("Incorrect packed bits!");
+        }
+        (m, k, bits[..(m as usize)].to_vec())  
+    }
     pub async fn run(&mut self) -> Result<(), BFError> {
         while let Some(cmd) = self.rx.recv().await {
             match cmd {
