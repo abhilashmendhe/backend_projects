@@ -1,0 +1,27 @@
+services:
+  database:
+    container_name: postgresql
+    image: postgres:16
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./databases:/docker-entrypoint-initdb.d:ro,Z
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password123
+      - POSTGRES_DB=tinyurldb
+    ports:
+      - 5433:5432
+  
+  cache:
+    container_name: redis-server
+    image: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+
+volumes: 
+  db-data:
+  redis_data:
