@@ -30,8 +30,10 @@ pub async fn require_auth(
         }
     };
 
-    let auth_header_token = if let Some(header_value) = req.headers().get("authorized") {
+    println!("HEADER VALUE: {:?}", req.headers().get("authorization"));
+    let auth_header_token = if let Some(header_value) = req.headers().get("authorization") {
         header_value.to_str().map_err(|err| {
+            tracing::error!("Failed to get header token: {:?}", err);
             return TinyUrlError::AppError(AppError::new(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Error reading token from header (bearer)",
@@ -67,7 +69,7 @@ pub async fn require_auth(
             if let None = err.as_database_error() {
                 return TinyUrlError::AppError(AppError::new(
                     StatusCode::NOT_FOUND,
-                    "User not found!",
+                    "User not found or already logged out!",
                 ));
             }
             TinyUrlError::AppError(AppError::new(
