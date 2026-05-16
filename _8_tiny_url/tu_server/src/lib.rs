@@ -5,6 +5,9 @@ use crate::{
     view_routers::views_factory,
 };
 
+pub mod middleware;
+pub mod models;
+pub mod routes;
 pub mod utils;
 pub mod view_routers;
 

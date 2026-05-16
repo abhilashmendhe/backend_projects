@@ -7,6 +7,10 @@ use tu_server::{
     utils::{app_state::AppState, config::Config, errors::TinyUrlError},
 };
 
+/**
+ * To run: cargo watch -q -c -w src/ -x "run -- -l localhost"
+ */
+
 #[derive(Parser, Debug)]
 struct ServerCli {
     #[arg(short, long)]
