@@ -56,9 +56,18 @@ pub async fn login(
         ))
     })?;
 
+    // 2.5 Check if user delted
+    // 1. check if already user delted
+    if let Some(_) = user.deleted_at {
+        return Err(TinyUrlError::AppError(AppError::new(
+            StatusCode::BAD_REQUEST,
+            "User doesn't exists or deleted!",
+        )));
+    }
+
     // 3. Now verify hashed password
     verify_hash_password(password, &user.password)?;
-
+    // println!("Verified ");
     // 3.5 If JWT already present, return the user
     if let Some(token_value) = user.token {
         let f = match validate_token(&app_data.config().jwt_secret(), &token_value) {
@@ -69,7 +78,7 @@ pub async fn login(
             let login_resp_user = LoginUserResponse {
                 id: user.id,
                 username: username.to_string(),
-                token: token_value,
+                token: token_value.to_string(),
             };
             return Ok(HttpResponse::Ok().json(login_resp_user));
         }
