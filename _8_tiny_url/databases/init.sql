@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS tinyurl (
     id BIGSERIAL PRIMARY KEY,
-    user_id INT NOT NULL, 
+    user_id BIGINT NOT NULL, 
     short_url_code VARCHAR(10) NOT NULL, 
     long_url TEXT NOT NULL, 
     created_at TIMESTAMPTZ DEFAULT NOW(),
