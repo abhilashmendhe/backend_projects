@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS tinyurl (
     CONSTRAINT fk_tinyurl_user
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 
-    UNIQUE(short_url_code)
+    UNIQUE(short_url_code),
+    UNIQUE(user_id, long_url)
 );
 
 CREATE INDEX idx_tinyurl_user_id ON tinyurl(user_id);
