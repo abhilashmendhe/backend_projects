@@ -7,6 +7,7 @@ use crate::{
     models::user_model::UserModel,
     routes::tinyurl::{
         TURL,
+        bloom_filter_insert::bloom_filter_insert,
         helpers::{encode_short_url::encode_short_url, serialize_date_time::FDateTime},
     },
     utils::{
@@ -42,7 +43,7 @@ pub async fn create_short_url(
     app_data: web::Data<AppState>,
 ) -> Result<HttpResponse, TinyUrlError> {
     // 1. check if url was passed empty or not, and also check if it was a bad url
-    let _ = &tu_req.validate().map_err(|err| {
+    let _ = &tu_req.validate().map_err(|_err| {
         TinyUrlError::AppError(AppError::new(
             StatusCode::BAD_REQUEST,
             "Either URL was passed empty or a bad url.",
@@ -51,7 +52,7 @@ pub async fn create_short_url(
 
     // 2. Get short url code
     let short_url_code = encode_short_url();
-    let short_url = format!("{}/{}", TURL, short_url_code);
+    let short_url = format!("{}/{}", TURL, &short_url_code);
 
     let mut qb = QueryBuilder::new("INSERT INTO tinyurl(user_id,short_url_code,long_url");
     if let Some(date) = &tu_req.expired_at {
@@ -64,7 +65,7 @@ pub async fn create_short_url(
         qb.push(",expired_at) VALUES(");
         qb.push_bind(user.id as i32);
         qb.push(", ");
-        qb.push_bind(short_url_code);
+        qb.push_bind(&short_url_code);
         qb.push(", ");
         qb.push_bind(&tu_req.long_url);
         qb.push(", ");
@@ -74,7 +75,7 @@ pub async fn create_short_url(
         qb.push(") VALUES(");
         qb.push_bind(user.id as i32);
         qb.push(", ");
-        qb.push_bind(short_url_code);
+        qb.push_bind(&short_url_code);
         qb.push(", ");
         qb.push_bind(&tu_req.long_url);
         qb.push(")");
@@ -103,6 +104,8 @@ pub async fn create_short_url(
         ))
     })?;
 
-    /////  Now insert it into bloom filter
+    //  Now insert it into bloom filter
+    bloom_filter_insert(short_url_code).await?;
+
     Ok(HttpResponse::Ok().json(TinyUrlResponse { short_url }))
 }
