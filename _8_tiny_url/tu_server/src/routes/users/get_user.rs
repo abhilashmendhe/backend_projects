@@ -11,7 +11,7 @@ use crate::{
 pub async fn get_user(
     id: web::Path<i32>,
     user: UserModel,
-    app_data: web::Data<AppState>,
+    _app_data: web::Data<AppState>,
 ) -> Result<HttpResponse, TinyUrlError> {
     let id = id.into_inner();
 

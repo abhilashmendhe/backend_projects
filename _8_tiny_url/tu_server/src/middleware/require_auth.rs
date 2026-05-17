@@ -30,7 +30,7 @@ pub async fn require_auth(
         }
     };
 
-    println!("HEADER VALUE: {:?}", req.headers().get("authorization"));
+    tracing::debug!("HEADER VALUE: {:?}", req.headers().get("authorization"));
     let auth_header_token = if let Some(header_value) = req.headers().get("authorization") {
         header_value.to_str().map_err(|err| {
             tracing::error!("Failed to get header token: {:?}", err);

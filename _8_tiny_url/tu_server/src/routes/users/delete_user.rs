@@ -42,10 +42,7 @@ pub async fn delete_user(
         tracing::error!("Error deleting user: {:?}", err);
         // println!("{:?}",);
         if let None = err.as_database_error() {
-            return TinyUrlError::AppError(AppError::new(
-                StatusCode::NOT_FOUND,
-                "User not found!",
-            ));
+            return TinyUrlError::AppError(AppError::new(StatusCode::NOT_FOUND, "User not found!"));
         }
         TinyUrlError::AppError(AppError::new(
             StatusCode::INTERNAL_SERVER_ERROR,

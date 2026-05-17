@@ -28,11 +28,6 @@ struct ServerCli {
 
 #[actix_web::main]
 async fn main() -> Result<(), TinyUrlError> {
-    // let uuid = uuid7::uuid7();
-    // let uuid_bytes = uuid.as_bytes();
-    // // println!("{:?}", uuid);
-    // println!("{}", u128::from_be_bytes(*uuid_bytes));
-
     // 0. Get args
     let scli = ServerCli::parse();
     let localhost = scli.localhost;
