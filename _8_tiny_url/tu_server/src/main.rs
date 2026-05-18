@@ -9,15 +9,22 @@ use tu_server::{
 
 /**
  * To run: cargo watch -q -c -w src/ -x "run -- -l localhost"
+ * To run: cargo watch -q -c -w src/ -x "run -- --addr localhost -p 8080 --redis-addr localhost --redis-port 6379"
  */
 
 #[derive(Parser, Debug)]
 struct ServerCli {
     #[arg(short, long)]
-    localhost: String,
+    addr: String,
 
     #[arg(short, long, default_value_t = 8080)]
     port: u16,
+
+    #[arg(long)]
+    redis_addr: String,
+
+    #[arg(long, default_value_t = 6379)]
+    redis_port: u16,
 
     #[arg(short, long, default_value_t = 4)]
     server_workers: usize,
@@ -30,8 +37,10 @@ struct ServerCli {
 async fn main() -> Result<(), TinyUrlError> {
     // 0. Get args
     let scli = ServerCli::parse();
-    let localhost = scli.localhost;
+    let localhost = scli.addr;
     let port = scli.port;
+    let redis_localhost = scli.redis_addr;
+    let redis_port = scli.redis_port;
     let db_conn_workers = scli.db_conn_workers;
     let server_workers = scli.server_workers;
 
@@ -64,8 +73,25 @@ async fn main() -> Result<(), TinyUrlError> {
         }
     };
 
+    // 5. Check with redis connection
+    let redis_addr = format!("redis://{}:{}/", redis_localhost, redis_port);
+    let redis_client = redis::Client::open(redis_addr)?;
+    let redis_conn;
+    loop {
+        match redis_client.get_multiplexed_async_connection().await {
+            Ok(connection) => {
+                redis_conn = connection;
+                break;
+            }
+            Err(err) => {
+                tracing::error!("{:?}", err);
+                let _ = std::thread::sleep(std::time::Duration::from_millis(5000));
+            }
+        }
+    }
+
     // 5. Init app state
-    let app_state = web::Data::new(AppState::new(config, pool));
+    let app_state = web::Data::new(AppState::new(config, pool, redis_conn));
 
     // 6. Run server
     run(localhost, port, server_workers, app_state).await?;

@@ -15,6 +15,9 @@ pub enum TinyUrlError {
     #[error("{}", .0)]
     IOErr(#[from] std::io::Error),
 
+    #[error("{}", .0)]
+    RedisErr(#[from] redis::RedisError),
+
     #[error("Application Error")]
     AppError(AppError),
 }
@@ -47,6 +50,7 @@ impl ResponseError for TinyUrlError {
             TinyUrlError::ParseIntError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             TinyUrlError::IOErr(_) => StatusCode::INTERNAL_SERVER_ERROR,
             TinyUrlError::AppError(app_error) => app_error.code,
+            TinyUrlError::RedisErr(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
@@ -56,6 +60,7 @@ impl ResponseError for TinyUrlError {
             TinyUrlError::ParseIntError(parse_int_error) => parse_int_error.to_string(),
             TinyUrlError::IOErr(error) => error.to_string(),
             TinyUrlError::AppError(app_error) => app_error.message.to_string(),
+            TinyUrlError::RedisErr(redis_error) => redis_error.to_string(),
         };
         HttpResponse::build(self.status_code()).json(ErrorResponse { message })
     }
