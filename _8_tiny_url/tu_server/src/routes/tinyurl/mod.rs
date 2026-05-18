@@ -13,8 +13,10 @@ const TURL: &'static str = "http://mybitiny.com";
 pub mod bloom_filter_insert;
 pub mod bloom_filter_query;
 pub mod create_short_url;
+pub mod get_from_redis;
 pub mod get_short_url;
 pub mod helpers;
+pub mod insert_into_redis;
 
 pub fn tinyurl_routers(app: &mut ServiceConfig) {
     app.service(
