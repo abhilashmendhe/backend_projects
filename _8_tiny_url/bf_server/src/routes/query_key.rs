@@ -26,7 +26,7 @@ pub async fn query_key(
             "internal server error. (err querying key in BF)",
         ))
     })?;
-
+    tracing::info!(" ->> GET /bf/v1 `{}` queried in BF!", &query_req.key);
     Ok((
         StatusCode::OK,
         Json(QueryResp {

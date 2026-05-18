@@ -21,5 +21,6 @@ pub async fn insert_key(
             "internal server error. (err inserting key in BF)",
         ))
     })?;
+    tracing::info!(" ->> POST /bf/v1 `{}` inserted in BF!", key);
     Ok((StatusCode::CREATED, format!("`{}` inserted in BF!", key)))
 }
