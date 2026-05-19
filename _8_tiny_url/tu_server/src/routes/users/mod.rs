@@ -31,7 +31,7 @@ pub fn users_routers(app: &mut ServiceConfig) {
                 web::resource("/{id}")
                     .wrap(from_fn(require_auth))
                     .route(web::get().to(get_user))
-                    .route(web::post().to(delete_user)),
+                    .route(web::delete().to(delete_user)),
             ),
     );
 }
