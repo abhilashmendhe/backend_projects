@@ -59,10 +59,11 @@ async def login_user(request: Request):
 async def get_user(id: int, request: Request):
 
     auth_header = request.headers.get("Authorization")
-    # print(auth_header)
+    print(auth_header)
     port = 58233
     myurl = f"http://localhost:{port}/v1/user/{id}"
-    # print(myurl)
+    print(myurl)
+    # print(await request.json())
     try:
         async with httpx.AsyncClient() as client:
             response = await client.request(
@@ -73,7 +74,13 @@ async def get_user(id: int, request: Request):
                 }
             )
             # print(response)
-        response.raise_for_status()
+        # response.raise_for_status()
+        print(response.status_code)
+        if response.status_code == 400:
+            return JSONResponse(
+                content={"message": "Bad request"},
+                status_code=400
+            )
         resp_payload = response.json()
         print(resp_payload)
         login_user_resp = UserModel(**resp_payload)
@@ -83,8 +90,28 @@ async def get_user(id: int, request: Request):
             status_code=503,
             detail=f"User service unavailable: {str(e)}"
         )
-    return {
-        "id": 1,
-        "created_at": "2026-05-18T10:00:00Z",
-        "token": "abc123"
-    }
+
+@router.delete("/{id}")
+async def delete_user(id: int, request: Request):
+    auth_header = request.headers.get("Authorization")
+    # print(auth_header)
+    port = 58233
+    myurl = f"http://localhost:{port}/v1/user/{id}"
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.request(
+                url=myurl,
+                method="DELETE",
+                headers={
+                    "Authorization": auth_header
+                }
+            )
+
+        response.raise_for_status()
+        return JSONResponse(content={'message':f'{response.text}'},status_code=204)
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"User service unavailable: {str(e)}"
+        )
