@@ -88,7 +88,7 @@ pub async fn login(
     let jwt_token = create_token(&app_data.config().jwt_secret(), username.to_string())?;
 
     // 5. Now update the user row, and set the JWT token value
-    sqlx::query!(r#"UPDATE users SET token=$1"#, jwt_token)
+    sqlx::query!(r#"UPDATE users SET token=$1 WHERE id=$2"#, jwt_token, user.id as i32)
         .execute(app_data.pool())
         .await
         .map_err(|err| {
