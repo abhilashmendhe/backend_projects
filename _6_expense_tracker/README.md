@@ -1,7 +1,5 @@
 # 🛒💸💰 Expense Tracker
 
----
-
 Built a basic *expense tracker* application that can track of different categories like food, shopping, health, housing etc. 
 
 ## 🚀 Features
