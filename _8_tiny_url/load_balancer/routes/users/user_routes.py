@@ -13,7 +13,7 @@ async def create_user(request: Request):
     # create_user = CreateUserRequest(**payload).model_dump()
     # print(create_user)
     # print(await lb())
-    port = 58233
+    port = await lb()
     myurl = f"http://localhost:{port}/v1/user"
     try:
         async with httpx.AsyncClient() as client:
@@ -34,7 +34,7 @@ async def create_user(request: Request):
 async def login_user(request: Request):
     payload = await request.json()
     # print(payload)
-    port = 58233
+    port = await lb()
     myurl = f"http://localhost:{port}/v1/user/login"
     try:
         async with httpx.AsyncClient() as client:
@@ -60,7 +60,7 @@ async def get_user(id: int, request: Request):
 
     auth_header = request.headers.get("Authorization")
     print(auth_header)
-    port = 58233
+    port = await lb()
     myurl = f"http://localhost:{port}/v1/user/{id}"
     print(myurl)
     # print(await request.json())
@@ -95,7 +95,7 @@ async def get_user(id: int, request: Request):
 async def delete_user(id: int, request: Request):
     auth_header = request.headers.get("Authorization")
     # print(auth_header)
-    port = 58233
+    port = await lb()
     myurl = f"http://localhost:{port}/v1/user/{id}"
 
     try:

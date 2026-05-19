@@ -8,6 +8,7 @@ import httpx
 import os 
 from contextlib import asynccontextmanager
 from routes.users.user_routes import router as user_router
+from routes.tinyurl.tinyurl_routes import router as tinyurl_router
 
 @asynccontextmanager
 async def server_info_lifespan(app: FastAPI):
@@ -22,3 +23,4 @@ async def about():
     return {"message":"I am load balancer for tinyurl"}
 
 app.include_router(user_router)
+app.include_router(tinyurl_router)
