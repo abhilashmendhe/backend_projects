@@ -16,17 +16,18 @@ To build a bloom filter,
 To compute *`m`* and *`k`*,
 
 
-###### 1. Bit Array Size (`m`)
+##### 1. Bit Array Size (`m`)
 
-\[
-m = -\frac{n \ln(p)}{(\ln 2)^2}
-\]
 
-###### 2. Number of Hash Functions (`k`)
+```text
+m = -(n × ln(p)) / (ln(2))²
+```
 
-\[
-k = \frac{m}{n} \ln(2)
-\]
+##### 2. Number of Hash Functions (`k`)
+
+```text
+k = (m / n) × ln(2)
+```
 
 Where,
 
