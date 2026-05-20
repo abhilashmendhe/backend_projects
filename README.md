@@ -7,3 +7,5 @@
 4. [NYC Restaurant Locator](https://github.com/abhilashmendhe/backend_projects/tree/main/_4_nyc_restaurant_locator)
 5. [Timestamp based KV-Store](https://github.com/abhilashmendhe/backend_projects/tree/main/_5_kv_stores)
 6. [Expense Tracker](https://github.com/abhilashmendhe/backend_projects/tree/main/_6_expense_tracker)
+7. [Bloom Filter](https://github.com/abhilashmendhe/backend_projects/tree/main/_7_bloom_filter)
+8. [Tiny Url](https://github.com/abhilashmendhe/backend_projects/tree/main/_8_tiny_url)
