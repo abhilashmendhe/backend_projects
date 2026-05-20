@@ -42,16 +42,16 @@ Where,
 
 ## Algorithm
 
-#### Inserting an element
+#### Inserting an item
 
 1. Compute `h₁(x), h₂(x), … hₖ(x)`.
 2. Set `bit_array[hᵢ(x)] = 1` for each i.
 
-#### Querying an element
+#### Querying an item
 
 1. Again compute the same k positions.
-2. If all bits are set to `1` → element is probably present in the set.
-3. If any bit is `0` → element is definitely absent.
+2. If all bits are set to `1` → item is probably present in the set.
+3. If any bit is `0` → item is definitely absent in the set.
 
 ---
 
