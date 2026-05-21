@@ -7,6 +7,9 @@ pub enum QueueServerErr {
     #[error("{}", .0)]
     IoErr(#[from] std::io::Error),
 
+    #[error("{}", .0)]
+    RedisErr(#[from] redis::RedisError),
+
     #[error("Queue server error")]
     AppError(AppError),
 }
@@ -36,6 +39,7 @@ impl ResponseError for QueueServerErr {
         match self {
             QueueServerErr::IoErr(_) => StatusCode::INTERNAL_SERVER_ERROR,
             QueueServerErr::AppError(app_error) => app_error.code,
+            QueueServerErr::RedisErr(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
@@ -43,6 +47,7 @@ impl ResponseError for QueueServerErr {
         let message = match self {
             QueueServerErr::IoErr(error) => error.to_string(),
             QueueServerErr::AppError(app_error) => app_error.message.to_string(),
+            QueueServerErr::RedisErr(redis_error) => redis_error.to_string(),
         };
         HttpResponse::build(self.status_code()).json(ErrorResponse { message })
     }
