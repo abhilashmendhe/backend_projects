@@ -30,6 +30,7 @@ sol! {
         function balanceOf(address) external view returns (uint256);
         function symbol() external view returns (string);
         function decimals() external view returns (uint8);
+        function name() external view returns (string);
     }
 }
 
@@ -38,8 +39,8 @@ pub async fn run(
     block_number_or_tag: BlockNumberOrTag,
 ) -> Result<(), TokenIndexerErr> {
     let provider = ProviderBuilder::new().connect(rpc_url).await?;
-    // let block_id = BlockId::from(block_number_or_tag);
-    let block_id = BlockId::Number(BlockNumberOrTag::Number(25170558));
+    let block_id = BlockId::from(block_number_or_tag);
+    // let block_id = BlockId::Number(BlockNumberOrTag::Number(25170558));
 
     let block_future = provider.get_block(block_id).full();
 
@@ -87,6 +88,7 @@ pub async fn run(
         match log.log_decode::<Transfer>() {
             Ok(log_decode) => {
                 let data = log_decode.data();
+                println!("Token address: {}", log.address());
                 println!("from: {:?}", data.from);
                 println!("to: {:?}", data.to);
                 println!("value: {:?}", data.value);
