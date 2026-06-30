@@ -1,0 +1,16 @@
+services:
+  database:
+    container_name: postgresql
+    image: postgres:16
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./databases:/docker-entrypoint-initdb.d:ro,Z
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password123
+      - POSTGRES_DB=notificationsdb
+    ports:
+      - 5433:5432
+
+volumes:
+  db-data:
