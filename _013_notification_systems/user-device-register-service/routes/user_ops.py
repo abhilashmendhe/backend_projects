@@ -6,6 +6,7 @@ from psycopg.rows import dict_row
 
 router = APIRouter(prefix="/user")
 
+# curl -X POST localhost:56732/user -H "Content-Type: application/json" -d '{"username":"Josah","email":"josh@gma.com"}'
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_user(request: CreateUserRequest, conn = Depends(get_connection)):
     user = request.model_dump()
@@ -30,6 +31,7 @@ async def create_user(request: CreateUserRequest, conn = Depends(get_connection)
             detail=str(e)
         )
 
+# curl -X GET localhost:56732/user/1'
 @router.get("/{id}", status_code=status.HTTP_200_OK, response_model=GetUserResponse)
 async def get_user(id: int, conn = Depends(get_connection)):
     
@@ -49,4 +51,3 @@ async def get_user(id: int, conn = Depends(get_connection)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )    
-    
