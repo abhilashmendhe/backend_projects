@@ -12,5 +12,32 @@ services:
     ports:
       - 5433:5432
 
+  redis-cache:
+    container_name: redis-server
+    image: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-cache-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+
+  redis-queue1:
+    image: redis 
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-queue1-data:/data 
+
+  redis-queue2:
+    image: redis 
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis-queue2-data:/data 
+      
 volumes:
   db-data:
+  redis-cache-data:
+  redis-queue1-data:
+  redis-queue2-data:
