@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS notification_deliverables (
     id SERIAL PRIMARY KEY, 
     notification_id BIGINT NOT NULL,
     device_id BIGINT NOT NULL, 
-    status SMALLINT NOT NULL, -- SENT(0), FAILED(1)
+    status SMALLINT NOT NULL, -- SENT(0), FAILED(1), QUEUED(2)
     retry_count SMALLINT NOT NULL,
     CONSTRAINT fk_not_deliverables FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE
 );
