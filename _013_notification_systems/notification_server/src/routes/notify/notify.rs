@@ -4,7 +4,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::{
-    models::device::Device,
+    models::{
+        device::Device, notification::Notification,
+        notification_deliverables::NotificationDeliverables,
+    },
+    routes::notify::push_to_queue::push_to_redis_queue,
     utils::{
         app_state::AppState,
         errors::{AppError, NotificationServerErr},
@@ -17,6 +21,12 @@ use crate::{
     > -H "Content-Type: application/json" \
     > -d '{"event_id": "evt_abc123", "recipient_user_id": "user_42", "title": "Fall detected, Room 14", "body": "Mrs. Hansen, please check immediately", "priority": "high", "occurred_at": "2026-05-23T18:53:49Z"}'
 */
+
+#[derive(Debug)]
+pub enum ForNotification {
+    Notification(Notification),
+    NotFoundNotification,
+}
 
 #[derive(Debug, Deserialize)]
 pub struct NotificationRequest {
@@ -102,49 +112,115 @@ pub async fn notify_event(
         }));
     }
 
-    // 3. Create a notification
-    let notification_id = sqlx::query_scalar!(
+    // 3. First check if event_id(global) exists in the table
+    let rnot = match sqlx::query_as!(
+        Notification,
         r#"
+            SELECT * FROM notifications WHERE event_id = $1
+        "#,
+        event_id
+    )
+    .fetch_one(app_data.db_pool())
+    .await
+    {
+        Ok(notification) => ForNotification::Notification(notification),
+        Err(_) => ForNotification::NotFoundNotification,
+    };
+
+    // 4. Create a notification if not found else check notification deliverables
+    let (notification_id, status) = match rnot {
+        ForNotification::Notification(notification) => {
+            // println!("notification exists.... now checking deliverables table");
+            // 4.1 check deliverable table
+            // 4.1.1 if found, do checks
+            let noti_deliv = sqlx::query_as!(
+                NotificationDeliverables,
+                r#"
+                    SELECT * FROM notification_deliverables WHERE notification_id = $1
+                "#,
+                notification.id
+            )
+            .fetch_all(app_data.db_pool())
+            .await
+            .map_err(|err| {
+                tracing::error!("-->\t {method} {path}  --  {:?}", err);
+                return NotificationServerErr::AppError(AppError {
+                    code: StatusCode::INTERNAL_SERVER_ERROR,
+                    message: "Failed to fetch from notification deliverables table!!".to_string(),
+                });
+            })?;
+
+            // if noti_deliv.len() > 0 {
+            //     for nd in noti_deliv {
+
+            //         // if status is not pending, return response to the client
+            //         if nd.status != 2 {
+
+            //         }
+            //     }
+            // }
+
+            // 4.1.2 if not found enqueu in the message queue
+            (notification.id, "QUEUED".to_string())
+        }
+        ForNotification::NotFoundNotification => {
+            // 4.1 create notification and enque in the message queue
+            let notification_id = sqlx::query_scalar!(
+                r#"
         INSERT INTO notifications(user_id, event_id, title, body, payload, priority, created_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id
         "#,
-        user_id,
-        event_id,
-        title,
-        body,
-        Some(json!({})),
-        priority,
-        created_at
-    )
-    .fetch_one(app_data.db_pool())
-    .await
-    .map_err(|err| {
-        tracing::error!("-->\t {method} {path}  --  {:?}", err);
-        if let Some(pg_err) = err.as_database_error() {
-            if let Some(e_code) = pg_err.code() {
-                if e_code.to_string().eq("23505") {
-                    return NotificationServerErr::AppError(AppError {
-                        code: StatusCode::BAD_REQUEST,
-                        message: format!("Notification already exists with event_id:{}!", event_id),
-                    });
+                user_id,
+                event_id,
+                title,
+                body,
+                Some(json!({})),
+                priority,
+                created_at
+            )
+            .fetch_one(app_data.db_pool())
+            .await
+            .map_err(|err| {
+                tracing::error!("-->\t {method} {path}  --  {:?}", err);
+                if let Some(pg_err) = err.as_database_error() {
+                    if let Some(e_code) = pg_err.code() {
+                        if e_code.to_string().eq("23505") {
+                            return NotificationServerErr::AppError(AppError {
+                                code: StatusCode::BAD_REQUEST,
+                                message: format!(
+                                    "Notification already exists with event_id:{}!",
+                                    event_id
+                                ),
+                            });
+                        }
+                    }
                 }
-            }
+                return NotificationServerErr::AppError(AppError {
+                    code: StatusCode::INTERNAL_SERVER_ERROR,
+                    message: "Failed to crate notification".to_string(),
+                });
+            })?;
+            (notification_id, "QUEUED".to_string())
         }
-        return NotificationServerErr::AppError(AppError {
-            code: StatusCode::INTERNAL_SERVER_ERROR,
-            message: "Failed to crate notification".to_string(),
-        });
-    })?;
+    };
 
-    // 4. Send info to respective message queues (`ios` and `android`)
+    // 5. Send info to respective message queues (`ios` and `android`)
     let mut device_tokens = vec![];
     let mut platforms = vec![];
     for device in devices {
         if let Some(act) = device.is_active {
             if act {
-                // push to redis queue.. 
-                
+                // push to redis queue..
+                let _ = push_to_redis_queue(
+                    notification_id,
+                    event_id,
+                    &device.device_token,
+                    &device.platform,
+                    priority,
+                    app_data.clone(),
+                )
+                .await;
                 device_tokens.push(device.device_token);
                 platforms.push(device.platform);
             }
@@ -156,6 +232,6 @@ pub async fn notify_event(
         event_id: event_id.to_string(),
         device_tokens,
         platforms,
-        status: "QUEUED".to_string(),
+        status,
     }))
 }
