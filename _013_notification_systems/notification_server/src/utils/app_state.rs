@@ -3,6 +3,7 @@ use sqlx::PgPool;
 
 use crate::utils::config::Config;
 
+#[derive(Debug, Clone)]
 pub struct AppState {
     config: Config,
     db_pool: PgPool,
@@ -36,15 +37,15 @@ impl AppState {
         &self.db_pool
     }
 
-    pub fn redis_cache(&self) -> &MultiplexedConnection {
-        &self.redis_cache
+    pub fn redis_cache(&self) -> MultiplexedConnection {
+        self.redis_cache.clone()
     }
 
-    pub fn redis_ios_q(&self) -> &MultiplexedConnection {
-        &self.redis_ios_q
+    pub fn redis_ios_q(&self) -> MultiplexedConnection {
+        self.redis_ios_q.clone()
     }
 
-    pub fn redis_android_q(&self) -> &MultiplexedConnection {
-        &self.redis_android_q
+    pub fn redis_android_q(&self) -> MultiplexedConnection {
+        self.redis_android_q.clone()
     }
 }
