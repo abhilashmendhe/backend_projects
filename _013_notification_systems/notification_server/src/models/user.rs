@@ -8,5 +8,3 @@ pub struct User {
     pub email: String,
     pub created_at: DateTime<Utc>,
 }
-
-
