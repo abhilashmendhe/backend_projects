@@ -1,12 +1,12 @@
 CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     username TEXT NOT NULL UNIQUE,
     email    VARCHAR(64) NOT NULL, 
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS devices (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     device_token TEXT NOT NULL,
     platform VARCHAR(8) NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS devices (
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL, 
     event_id VARCHAR(64) NOT NULL, 
     title VARCHAR(64) NOT NULL, 
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 CREATE TABLE IF NOT EXISTS notification_deliverables (
-    id SERIAL PRIMARY KEY, 
+    id BIGSERIAL PRIMARY KEY, 
     notification_id BIGINT NOT NULL,
     device_id BIGINT NOT NULL, 
     status SMALLINT NOT NULL, -- SENT(0), FAILED(1), PENDING(2)
@@ -39,10 +39,18 @@ CREATE TABLE IF NOT EXISTS notification_deliverables (
 );
 
 CREATE TABLE IF NOT EXISTS notification_logs(
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     delivery_id BIGINT NOT NULL, 
     event_id VARCHAR(64) NOT NULL, 
     created_at TIMESTAMPTZ DEFAULT NOW(),
     message TEXT,
     CONSTRAINT fk_log_deliverables FOREIGN KEY (delivery_id) REFERENCES notification_deliverables(id) ON DELETE CASCADE
 );
+
+-- Create indexes
+CREATE INDEX idx_devices_user_id ON devices(user_id);
+CREATE UNIQUE INDEX idx_devices_device_token ON devices(device_token);
+CREATE UNIQUE INDEX idx_notifications_event_id ON notifications(event_id);
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_deliverables_notification_id ON notification_deliverables(notification_id);
+CREATE INDEX idx_logs_delivery_id ON notification_logs(delivery_id);
