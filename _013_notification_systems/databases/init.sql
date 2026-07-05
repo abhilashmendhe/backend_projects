@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     title VARCHAR(64) NOT NULL, 
     body VARCHAR(64),
     payload JSONB,
-    priority SMALLINT, -- HIGH (0), LOW(1)
+    priority SMALLINT NOT NULL, -- HIGH (0), LOW(1)
     -- status  SMALLINT NOT NULL, -- RECEIVED, QUEUED, PROCESSING, SENT, PARTIALLY_SENT, FAILED
     created_at TIMESTAMPTZ,
     CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS notification_deliverables (
     device_id BIGINT NOT NULL, 
     status SMALLINT NOT NULL, -- SENT(0), FAILED(1), PENDING(2)
     retry_count SMALLINT NOT NULL,
+    next_retry_at TIMESTAMPTZ DEFAULT NOW(),
     CONSTRAINT fk_not_deliverables FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE
 );
 
