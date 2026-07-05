@@ -74,7 +74,7 @@ async fn update_next_retry_at(
     next_date_time: DateTime<Utc>,
     app_data: web::Data<AppState>,
 ) -> Result<SubNotificationResp, NotificationServerErr> {
-    let mut sub_notification = push_to_redis_queue(
+    let sub_notification = push_to_redis_queue(
         notification_id,
         event_id,
         &device_token,
