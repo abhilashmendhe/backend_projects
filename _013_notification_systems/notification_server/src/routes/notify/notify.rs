@@ -12,7 +12,7 @@ use crate::utils::{
  *
     $ curl -X POST localhost:60001/notify \
     > -H "Content-Type: application/json" \
-    > -d '{"event_id": "evt_abc123", "recipient_user_id": "user_42", "title": "Fall detected, Room 14", "body": "Mrs. Hansen, please check immediately", "priority": "high", "occurred_at": "2026-05-23T18:53:49Z"}'
+    > -d '{"event_id": "evt_abc123", "recipient_user_id": "user_0042", "title": "Fall detected, Room 14", "body": "Mrs. Hansen, please check immediately", "priority": "high", "occurred_at": "2026-05-23T18:53:49Z"}'
 */
 
 #[derive(Debug, Deserialize)]
