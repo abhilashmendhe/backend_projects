@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS notification_deliverables (
     status SMALLINT NOT NULL, -- SENT(0), FAILED(1), PENDING(2)
     retry_count SMALLINT NOT NULL,
     next_retry_at TIMESTAMPTZ DEFAULT NOW(),
-    CONSTRAINT fk_not_deliverables FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE
+    CONSTRAINT fk_noti_deliverables FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS notification_logs(
@@ -48,6 +48,16 @@ CREATE TABLE IF NOT EXISTS notification_logs(
     CONSTRAINT fk_log_deliverables FOREIGN KEY (delivery_id) REFERENCES notification_deliverables(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS notification_outbox(
+    id BIGSERIAL PRIMARY KEY, 
+    notification_id BIGINT NOT NULL, 
+    user_id BIGINT NOT NULL,
+    published BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT fk_noti_outbox FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_outbox FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Create indexes
 CREATE INDEX idx_devices_user_id ON devices(user_id);
 CREATE UNIQUE INDEX idx_devices_device_token ON devices(device_token);
@@ -55,3 +65,4 @@ CREATE UNIQUE INDEX idx_notifications_event_id ON notifications(event_id);
 CREATE INDEX idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX idx_deliverables_notification_id ON notification_deliverables(notification_id);
 CREATE INDEX idx_logs_delivery_id ON notification_logs(delivery_id);
+CREATE INDEX idx_outbox_published ON notification_outbox(published); -- ON outbox(created_at) WHERE published = false;
