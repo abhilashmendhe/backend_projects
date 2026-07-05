@@ -42,7 +42,7 @@ async fn main() -> Result<(), NotificationServerErr> {
 
     // 3. read .env file
     dotenv::dotenv().ok();
-    let db_url = std::env::var("DB_URL")?;
+    let db_url = std::env::var("DATABASE_URL")?;
     let high_priority_max_retry = std::env::var("HIGH_PRIORITY_MAX_RETRY")?;
     let low_priority_max_retry = std::env::var("LOW_PRIORITY_MAX_RETRY")?;
     let redis_cache_url = std::env::var("REDIS_CACHE")?;
