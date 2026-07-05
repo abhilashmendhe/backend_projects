@@ -1,5 +1,5 @@
 use actix_web::{HttpRequest, HttpResponse, http::StatusCode, web};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, TimeDelta, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -8,7 +8,7 @@ use crate::{
         device::Device, notification::Notification,
         notification_deliverables::NotificationDeliverables,
     },
-    routes::notify::push_to_queue::push_to_redis_queue,
+    routes::notify::{notification_retry::retry_notification, push_to_queue::push_to_redis_queue},
     utils::{
         app_state::AppState,
         errors::{AppError, NotificationServerErr},
@@ -39,12 +39,18 @@ pub struct NotificationRequest {
 }
 
 #[derive(Debug, Serialize)]
+pub struct SubNotificationResp {
+    pub device_token: String,
+    pub platform: String,
+    pub status: String,
+}
+
+#[derive(Debug, Serialize)]
 pub struct NotificationResponse {
+    pub user_id: i64,
     pub notification_id: i64,
     pub event_id: String,
-    pub device_tokens: Vec<String>,
-    pub platforms: Vec<String>,
-    pub status: String,
+    pub sub_notification_resp: Vec<SubNotificationResp>,
 }
 
 pub async fn notify_event(
@@ -108,7 +114,7 @@ pub async fn notify_event(
     if devices.len() == 0 {
         return Err(NotificationServerErr::AppError(AppError {
             code: StatusCode::GONE,
-            message: format!("Devices not registered with user id:{}", user_id),
+            message: format!("Devices not registered/deleted with user id:{}", user_id),
         }));
     }
 
@@ -128,7 +134,7 @@ pub async fn notify_event(
     };
 
     // 4. Create a notification if not found else check notification deliverables
-    let (notification_id, status) = match rnot {
+    let (notification_id, _status) = match rnot {
         ForNotification::Notification(notification) => {
             // println!("notification exists.... now checking deliverables table");
             // 4.1 check deliverable table
@@ -150,15 +156,56 @@ pub async fn notify_event(
                 });
             })?;
 
-            // if noti_deliv.len() > 0 {
-            //     for nd in noti_deliv {
-
-            //         // if status is not pending, return response to the client
-            //         if nd.status != 2 {
-
-            //         }
-            //     }
-            // }
+            if noti_deliv.len() > 0 {
+                let mut sub_notifications = vec![];
+                for nd in noti_deliv {
+                    let device = devices.iter().find(|d| d.id == nd.device_id);
+                    let (device_token, platform) = if let Some(d) = device {
+                        (d.device_token.to_string(), d.platform.to_string())
+                    } else {
+                        ("".to_string(), "".to_string())
+                    };
+                    // if status is not pending, return response to the client
+                    if nd.status == 0 {
+                        // sent
+                        sub_notifications.push(SubNotificationResp {
+                            device_token: device_token,
+                            platform: platform,
+                            status: "SENT".to_owned(),
+                        });
+                    } else if nd.status == 1 {
+                        let sub_notification = retry_notification(
+                            nd.id,
+                            nd.retry_count as u32,
+                            nd.notification_id,
+                            event_id,
+                            &device_token,
+                            &platform,
+                            priority,
+                            app_data.clone(),
+                        )
+                        .await?;
+                        sub_notifications.push(sub_notification);
+                    } else {
+                        // pending
+                        sub_notifications.push(SubNotificationResp {
+                            device_token: device_token,
+                            platform: platform,
+                            status: "PENDING".to_owned(),
+                        });
+                    }
+                    return Ok(HttpResponse::Ok().json(NotificationResponse {
+                        user_id,
+                        notification_id: nd.notification_id,
+                        event_id: event_id.to_string(),
+                        sub_notification_resp: sub_notifications,
+                    }));
+                }
+            }
+            // return Err(NotificationServerErr::AppError(AppError {
+            //     code: StatusCode::INTERNAL_SERVER_ERROR,
+            //     message: "Failed to crate notification".to_string(),
+            // }));
 
             // 4.1.2 if not found enqueu in the message queue
             (notification.id, "QUEUED".to_string())
@@ -206,13 +253,12 @@ pub async fn notify_event(
     };
 
     // 5. Send info to respective message queues (`ios` and `android`)
-    let mut device_tokens = vec![];
-    let mut platforms = vec![];
+    let mut sub_notifications = vec![];
     for device in devices {
         if let Some(act) = device.is_active {
             if act {
                 // push to redis queue..
-                let _ = push_to_redis_queue(
+                let sub_notification = push_to_redis_queue(
                     notification_id,
                     event_id,
                     &device.device_token,
@@ -220,18 +266,16 @@ pub async fn notify_event(
                     priority,
                     app_data.clone(),
                 )
-                .await;
-                device_tokens.push(device.device_token);
-                platforms.push(device.platform);
+                .await?;
+                sub_notifications.push(sub_notification);
             }
         }
     }
 
     Ok(HttpResponse::Ok().json(NotificationResponse {
+        user_id,
         notification_id,
         event_id: event_id.to_string(),
-        device_tokens,
-        platforms,
-        status,
+        sub_notification_resp: sub_notifications,
     }))
 }

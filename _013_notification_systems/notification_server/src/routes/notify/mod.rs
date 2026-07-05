@@ -2,6 +2,7 @@ use actix_web::web::{self, ServiceConfig};
 
 use crate::routes::notify::notify::notify_event;
 
+pub mod notification_retry;
 pub mod notify;
 pub mod push_to_queue;
 
