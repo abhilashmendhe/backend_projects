@@ -1,9 +1,12 @@
-use crate::utils::{
-    app_state::AppState,
-    errors::{AppError, NotificationServerErr},
+use crate::{
+    routes::notify::notify::SubNotificationResp,
+    utils::{
+        app_state::AppState,
+        errors::{AppError, NotificationServerErr},
+    },
 };
 use actix_web::{http::StatusCode, web};
-use redis::{AsyncTypedCommands, aio::MultiplexedConnection};
+use redis::AsyncTypedCommands;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,7 +23,7 @@ pub async fn push_to_redis_queue(
     platform: &str,
     priority: i16,
     app_data: web::Data<AppState>,
-) -> Result<(), NotificationServerErr> {
+) -> Result<SubNotificationResp, NotificationServerErr> {
     let mut conn = if platform.eq("ios") {
         app_data.redis_ios_q()
     } else if platform.eq("android") {
@@ -45,8 +48,17 @@ pub async fn push_to_redis_queue(
         });
     })?;
 
-    let re = conn
+    let status = match conn
         .lpush::<String, String>(priority.to_string(), message)
-        .await;
-    Ok(())
+        .await
+    {
+        Ok(_) => "QUEUED".to_string(),
+        Err(_) => "FAILED_QUEUED".to_owned(),
+    };
+
+    Ok(SubNotificationResp {
+        device_token: device_token.to_owned(),
+        platform: platform.to_owned(),
+        status,
+    })
 }
