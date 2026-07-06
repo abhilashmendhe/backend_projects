@@ -1,6 +1,6 @@
-use crate::utils::app_state::AppState;
-use redis::AsyncTypedCommands;
+use redis::{AsyncTypedCommands, aio::MultiplexedConnection};
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 
 // --------------------- Notification outbox, notiications and deivces combined data model --------------------
 #[derive(Debug, Deserialize)]
@@ -24,7 +24,12 @@ pub struct Message {
     pub device_token: String,
 }
 
-pub async fn push_to_redis_queue(app_data: AppState) {
+pub async fn push_to_redis_queue(
+    db_pool: PgPool,
+    redis_ios_q: MultiplexedConnection,
+    redis_android_q: MultiplexedConnection,
+    background_fetch_limit_rows: i64,
+) {
     match sqlx::query_as!(
         NotificationDeviceOutbox,
         r#"
@@ -39,18 +44,19 @@ pub async fn push_to_redis_queue(app_data: AppState) {
             d.platform AS d_platform
         FROM notification_outbox AS no
         INNER JOIN notifications AS n on no.notification_id = n.id
-        INNER JOIN devices AS d on no.user_id = d.user_id WHERE no.published=False AND d.is_active=True LIMIT 100;
-        "#
-    ).fetch_all(app_data.db_pool())
+        INNER JOIN devices AS d on no.user_id = d.user_id WHERE no.published=False AND d.is_active=True LIMIT $1;
+        "#,
+        background_fetch_limit_rows
+    ).fetch_all(&db_pool)
     .await {
         Ok(noti_device_outbox) => {
             let mut no_outbox_ids: Vec<i64> = vec![];
             // 1. enqueue in queue 
             for ndo in noti_device_outbox {
                 let mut q_conn = if ndo.d_platform.eq("ios") {
-                    app_data.redis_ios_q()
+                    redis_ios_q.clone()
                 } else if ndo.d_platform.eq("android") {
-                    app_data.redis_android_q()
+                    redis_android_q.clone()
                 } else {
                     // Implement queues for sms, emails etc.
                     continue
@@ -81,7 +87,7 @@ pub async fn push_to_redis_queue(app_data: AppState) {
                     r#"UPDATE notification_outbox SET published = $1 WHERE id = $2"#,
                     true,
                     no_id
-                ).execute(app_data.db_pool())
+                ).execute(&db_pool)
                 .await;
             }
         },
