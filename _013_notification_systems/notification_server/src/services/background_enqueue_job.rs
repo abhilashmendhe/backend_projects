@@ -79,7 +79,7 @@ pub async fn push_to_redis_queue(app_data: AppState) {
             for no_id in no_outbox_ids {
                 let _ = sqlx::query!(
                     r#"UPDATE notification_outbox SET published = $1 WHERE id = $2"#,
-                    true, 
+                    true,
                     no_id
                 ).execute(app_data.db_pool())
                 .await;
