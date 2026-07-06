@@ -36,7 +36,7 @@ struct ServerCli {
     num_background_workers: u64,
 
     #[arg(long, default_value_t = 100)]
-    background_fetch_limit_rows: i64
+    background_fetch_limit_rows: i64,
 }
 
 #[actix_web::main]
@@ -94,7 +94,13 @@ async fn main() -> Result<(), NotificationServerErr> {
         loop {
             scheduler.tick().await;
             // println!("running in background");
-            push_to_redis_queue(db_pool_c.clone(), r_ios_q_c.clone(), r_android_q_c.clone(), background_fetch_limit_rows).await;
+            push_to_redis_queue(
+                db_pool_c.clone(),
+                r_ios_q_c.clone(),
+                r_android_q_c.clone(),
+                background_fetch_limit_rows,
+            )
+            .await;
         }
     });
 
