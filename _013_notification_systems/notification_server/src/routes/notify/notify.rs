@@ -133,13 +133,11 @@ pub async fn notify_event(
     }
     let mut platforms = vec![];
     for ud in &users_devices {
-        platforms.push(
-            Platform {
-                platform: ud.d_platform.clone(),
-                is_active: ud.d_is_active ,
-                last_seen_at: ud.d_last_seen_at,
-            }
-        );
+        platforms.push(Platform {
+            platform: ud.d_platform.clone(),
+            is_active: ud.d_is_active,
+            last_seen_at: ud.d_last_seen_at,
+        });
     }
     let user_id = users_devices[0].u_id;
     // 3. Insert data into notifications and notification_outbox table with a transaction
@@ -220,6 +218,6 @@ pub async fn notify_event(
             outbox_id,
             event_id: event_id.to_string(),
         },
-        platforms,  
+        platforms,
     }))
 }
