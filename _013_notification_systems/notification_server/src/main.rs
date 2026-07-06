@@ -1,10 +1,14 @@
+use std::time::Duration;
+
 use actix_web::web;
 use clap::Parser;
 use notification_server::{
     make_connections::{get_db_pool, get_redis_conn},
     run,
+    services::background_enqueue_job::push_to_redis_queue,
     utils::{app_state::AppState, config::Config, errors::NotificationServerErr},
 };
+use tokio::time::interval;
 use tracing::level_filters::LevelFilter;
 
 /**
@@ -24,6 +28,15 @@ struct ServerCli {
 
     #[arg(short, long, default_value_t = 4)]
     db_conn_workers: u32,
+
+    #[arg(short, long, default_value_t = 5)]
+    binterval_scheduler_t: u64,
+
+    #[arg(long, default_value_t = 4)]
+    num_background_workers: u64,
+
+    #[arg(long, default_value_t = 100)]
+    background_fetch_limit_rows: i64
 }
 
 #[actix_web::main]
@@ -34,6 +47,9 @@ async fn main() -> Result<(), NotificationServerErr> {
     let port = scli.port;
     let db_conn_workers = scli.db_conn_workers;
     let server_workers = scli.server_workers;
+    let binterval_scheduler_t = scli.binterval_scheduler_t;
+    let num_background_workers = scli.num_background_workers;
+    let background_fetch_limit_rows = scli.background_fetch_limit_rows;
 
     // 2. enable tracing
     tracing_subscriber::fmt()
@@ -64,16 +80,31 @@ async fn main() -> Result<(), NotificationServerErr> {
     let r_ios_q = get_redis_conn(&redis_ios_queue_url).await?;
     let r_android_q = get_redis_conn(&redis_android_queue_url).await?;
 
+    // 7. Get clone of db, ios, and android queue connection for background jobs
+    let db_pool_c = db_pool.clone();
+    let r_ios_q_c = r_ios_q.clone();
+    let r_android_q_c = r_android_q.clone();
+
     // 7. Create app state
-    let app_state = web::Data::new(AppState::new(
-        config,
-        db_pool,
-        r_cache,
-        r_ios_q,
-        r_android_q,
-    ));
+    let app_state = AppState::new(config, db_pool, r_cache, r_ios_q, r_android_q);
 
-    run(&server_addr, port, server_workers, app_state).await?;
+    // 8. Run background enqueue job
+    let _ = tokio::spawn(async move {
+        let mut scheduler = interval(Duration::from_secs(binterval_scheduler_t));
+        loop {
+            scheduler.tick().await;
+            // println!("running in background");
+            push_to_redis_queue(db_pool_c.clone(), r_ios_q_c.clone(), r_android_q_c.clone(), background_fetch_limit_rows).await;
+        }
+    });
 
+    // 9. Start actix server
+    run(
+        &server_addr,
+        port,
+        server_workers,
+        web::Data::new(app_state),
+    )
+    .await?;
     Ok(())
 }
