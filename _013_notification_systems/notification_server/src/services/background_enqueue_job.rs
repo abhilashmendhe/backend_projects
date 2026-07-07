@@ -1,5 +1,5 @@
 use redis::{AsyncTypedCommands, aio::MultiplexedConnection};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use sqlx::PgPool;
 
 // --------------------- Notification outbox, notiications and deivces combined data model --------------------
@@ -15,14 +15,19 @@ pub struct NotificationDeviceOutbox {
     pub d_platform: String,
 }
 
-// --------------------- Message model to enqueue in jobs queue --------------------
-#[derive(Debug, Serialize)]
-pub struct Message {
-    pub notification_outbox_id: i64,
-    pub notification_id: i64,
-    pub event_id: String,
-    pub device_token: String,
-}
+/**
+ * Using streams to push notifications
+ *
+ * // 1. to add into a stream named ios-0
+ * $ XADD ios-0 * message '{"notification_outbox_id":3,"notification_id":55,"event_id":"evt_abc999","device_token":"ios_tok_user_0400"}'
+ *
+ * // 2. evict 5+1 stream events from ios-0 stream
+ * $ XTRIM ios-0 MAXLEN 5
+ *
+ * // 3. to read 100 streams from ios-0 stream
+ * $ XRANGE ios-0 - + COUNT 100
+ *
+ */
 
 pub async fn push_to_redis_queue(
     db_pool: PgPool,
@@ -61,26 +66,27 @@ pub async fn push_to_redis_queue(
                     // Implement queues for sms, emails etc.
                     continue
                 };
-                match serde_json::to_string(&Message {
-                    notification_outbox_id: ndo.no_id,
-                    notification_id: ndo.no_n_id,
-                    event_id: ndo.n_event_id.to_string(),
-                    device_token: ndo.d_device_token.to_string(),
-                }) {
-                    Ok(message) => {
-                        match q_conn.lpush::<String, String>(ndo.n_priority.to_string(), message).await {
-                            Ok(_) => {
-                                no_outbox_ids.push(ndo.no_id);
-                            },
-                            Err(_) => { continue },
-                        }
+                let message = &[
+                    ("notification_outbox_id", ndo.no_id.to_string()),
+                    ("notification_id", ndo.no_n_id.to_string()),
+                    ("event_id", ndo.n_event_id.to_string()),
+                    ("device_token", ndo.d_device_token.to_string())
+                ];
+        /*
+            {"notification_outbox_id":3,"notification_id":55,"event_id":"evt_abc999","device_token":"ios_tok_user_0400"}
+            {"notification_outbox_id":3,"notification_id":55,"event_id":"evt_abc999","device_token":"android_tok_user_0400"}
+        */
+                match q_conn.xadd(
+                    format!("{}-{}", ndo.d_platform, ndo.n_priority), 
+                    "*", 
+                    message
+                ).await {
+                    Ok(_) => {
+                        no_outbox_ids.push(ndo.no_id);
                     },
-                    Err(_) => {
-                        continue
-                    },
+                    Err(_) => { continue },
                 }
             }
-
             // 2. update notification_oubox table set published to true
             for no_id in no_outbox_ids {
                 let _ = sqlx::query!(
