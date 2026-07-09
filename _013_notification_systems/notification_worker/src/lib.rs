@@ -69,22 +69,5 @@ pub async fn run(
 
         }
     }
-    // let result = q_conn
-    //     .xread_options::<String, &str, RedisResult<StreamReadReply>>(
-    //         // .xread_options::<String, &str, RedisResult<StreamReadReply>>(
-    //         &streams,
-    //         &ids,
-    //         &q_stream_opts,
-    //     )
-    //     .await?;
-    // match result {
-    //     Ok(reply) => {
-    //         let keys = reply.keys;
-
-    //     }
-    //     Err(err) => {
-    //         tracing::error!("Stream Read Reply: {:?}", err);
-    //     },
-    // }
     Ok(())
 }
