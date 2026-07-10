@@ -3,6 +3,7 @@ use redis::{
     aio::MultiplexedConnection,
     streams::{StreamId, StreamReadOptions, StreamReadReply},
 };
+use sqlx::PgPool;
 
 use crate::utils::error::NotificationWorkerErr;
 
@@ -14,17 +15,31 @@ pub mod utils;
 
 pub async fn run(
     num_workers: u32,
-    platform_spec_stream: String,
+    priority: u8,
+    platform: String,
     q_stream_opts: StreamReadOptions,
+    url_gateway: String,
+    callback_url: String, 
+    db_conn: PgPool,
     q_conn: &mut MultiplexedConnection,
 ) -> Result<(), NotificationWorkerErr> {
     // 1. create channels
     let (tx, rx) = tokio::sync::mpsc::channel::<StreamId>(1000);
-    spawn_workers(&platform_spec_stream, num_workers, rx).await;
+    let _ = spawn_workers(
+        priority,
+        platform.clone(),
+        num_workers,
+        url_gateway,
+        callback_url,
+        rx,
+        db_conn,
+        q_conn,
+    )
+    .await;
 
     // 2. run background worker job
     loop {
-        let stream = platform_spec_stream.clone();
+        let stream = format!("{}-{}", platform, priority);
         let streams = [stream];
         let ids = [">"];
         tokio::select! {
