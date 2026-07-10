@@ -1,6 +1,6 @@
+use crate::utils::error::NotificationWorkerErr;
 use reqwest::Response;
 use serde::Serialize;
-use crate::utils::error::NotificationWorkerErr;
 
 #[derive(Debug, Serialize)]
 pub struct NotifyRequest {
@@ -33,5 +33,5 @@ pub async fn make_gateway_request(
 ) -> Result<Response, NotificationWorkerErr> {
     let url = format!("http://{}", url_gateway);
     let client = reqwest::Client::new();
-    Ok(client.post(url).json(&notify_req).send().await?) 
+    Ok(client.post(url).json(&notify_req).send().await?)
 }

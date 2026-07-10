@@ -16,10 +16,12 @@ pub mod utils;
 pub async fn run(
     num_workers: u32,
     priority: u8,
+    max_retry_count: u8,
     platform: String,
+    r_stream_group_name: String,
     q_stream_opts: StreamReadOptions,
     url_gateway: String,
-    callback_url: String, 
+    callback_url: String,
     db_conn: PgPool,
     q_conn: &mut MultiplexedConnection,
 ) -> Result<(), NotificationWorkerErr> {
@@ -27,7 +29,9 @@ pub async fn run(
     let (tx, rx) = tokio::sync::mpsc::channel::<StreamId>(1000);
     let _ = spawn_workers(
         priority,
+        max_retry_count,
         platform.clone(),
+        r_stream_group_name.clone(),
         num_workers,
         url_gateway,
         callback_url,

@@ -3,6 +3,7 @@ use dotenv::dotenv;
 use notification_worker::{
     make_connections::{get_db_pool, get_redis_conn},
     run,
+    services::process_job::NotificationNotificationDeliverables,
     utils::error::NotificationWorkerErr,
 };
 use redis::{AsyncCommands, streams::StreamReadOptions};
@@ -49,11 +50,17 @@ pub struct ServerCli {
     #[arg(long)]
     priority: String,
 
+    #[arg(long)]
+    max_retry_count: String,
+
     #[arg(long, default_value = "127.0.0.1:9000/push")]
     url_gateway: String,
 
     #[arg(long, default_value = "")]
-    callback_url: String, 
+    callback_url: String,
+
+    #[arg(long, default_value = "group-1")]
+    r_stream_group_name: String,
 }
 
 #[tokio::main]
@@ -66,8 +73,10 @@ async fn main() -> Result<(), NotificationWorkerErr> {
     let platform = scli.platform;
     let consumer_name = scli.consumer_name;
     let priority = scli.priority;
+    let max_retry_count = scli.max_retry_count;
     let url_gateway = scli.url_gateway;
     let callback_url = scli.callback_url;
+    let r_stream_group_name = scli.r_stream_group_name;
 
     let priority_n = if priority.to_lowercase().eq("low") {
         1 as u8
@@ -76,6 +85,9 @@ async fn main() -> Result<(), NotificationWorkerErr> {
     } else {
         panic!("Didn't pass the right priority option. Should be either `low` or `high`!");
     };
+
+    let max_retry_count_n = max_retry_count.parse::<u8>()?;
+
     // 2. enable tracing
     tracing_subscriber::fmt()
         .with_max_level(LevelFilter::ERROR)
@@ -106,7 +118,7 @@ async fn main() -> Result<(), NotificationWorkerErr> {
         .clone()
         .xgroup_destroy::<String, String, String>(
             format!("{}-{}", platform, priority_n),
-            "group-1".to_string(),
+            r_stream_group_name.to_string(),
         )
         .await;
 
@@ -131,7 +143,9 @@ async fn main() -> Result<(), NotificationWorkerErr> {
     run(
         num_workers,
         priority_n,
+        max_retry_count_n,
         platform,
+        r_stream_group_name,
         q_stream_opts,
         url_gateway,
         callback_url,
@@ -139,5 +153,6 @@ async fn main() -> Result<(), NotificationWorkerErr> {
         &mut q_conn,
     )
     .await?;
+
     Ok(())
 }

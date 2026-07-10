@@ -9,10 +9,12 @@ use crate::{services::process_job::process_job, utils::error::NotificationWorker
 
 pub async fn spawn_workers(
     priority: u8,
+    max_retry_count: u8,
     platform: String,
+    r_stream_group_name: String,
     num_workers: u32,
     url_gateway: String,
-    callback_url: String, 
+    callback_url: String,
     rx: Receiver<StreamId>,
     db_conn: PgPool,
     q_conn: &mut MultiplexedConnection,
@@ -21,6 +23,7 @@ pub async fn spawn_workers(
 
     for _ in 0..num_workers {
         let platform = platform.clone();
+        let r_stream_group_name = r_stream_group_name.clone();
         let rx = rx.clone();
         let db_conn = db_conn.clone();
         let url_gateway = url_gateway.clone();
@@ -36,12 +39,14 @@ pub async fn spawn_workers(
                     // println!("worker {nw} {:?}", job);
                     let _ = process_job(
                         priority,
+                        max_retry_count,
                         platform.clone(),
+                        r_stream_group_name.clone(),
                         job,
                         url_gateway.clone(),
                         callback_url.clone(),
                         db_conn.clone(),
-                        q_conn.clone(),
+                        &mut q_conn.clone(),
                     )
                     .await;
                 } else {
