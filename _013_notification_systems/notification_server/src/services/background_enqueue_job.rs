@@ -70,7 +70,7 @@ pub async fn push_to_redis_queue(
                     ("notification_outbox_id", ndo.no_id.to_string()),
                     ("notification_id", ndo.no_n_id.to_string()),
                     ("event_id", ndo.n_event_id.to_string()),
-                    ("device_token", ndo.d_device_token.to_string())
+                    ("device_id", ndo.d_id.to_string())
                 ];
         /*
             {"notification_outbox_id":3,"notification_id":55,"event_id":"evt_abc999","device_token":"ios_tok_user_0400"}
