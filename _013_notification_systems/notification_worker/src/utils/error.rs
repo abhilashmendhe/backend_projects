@@ -1,6 +1,7 @@
 use std::{env::VarError, num::ParseIntError};
 
 use redis::RedisError;
+use reqwest::header::ToStrError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -13,6 +14,9 @@ pub enum NotificationWorkerErr {
 
     #[error("{}", 0)]
     ParseIntErr(#[from] ParseIntError),
+
+    #[error("{}", 0)]
+    ToStrErr(#[from] ToStrError),
 
     #[error("{}", 0)]
     SQLErr(#[from] sqlx::Error),
