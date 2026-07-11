@@ -180,13 +180,18 @@ pub async fn process_job(
         let retr_val_n = retr_val_s.parse::<i64>()?;
         let retry_at = now + TimeDelta::seconds(retr_val_n);
         if notification_details.nod_id.is_none() {
-            
-            create_notification_deliverables(n_id, device_id, 2, 1, Some(retry_at), db_conn.clone())
-                .await?;
+            create_notification_deliverables(
+                n_id,
+                device_id,
+                2,
+                1,
+                Some(retry_at),
+                db_conn.clone(),
+            )
+            .await?;
         } else {
-
             let retry_count = notification_details.nod_retry_count.unwrap();
-            let nod_id =                 notification_details.nod_id.unwrap();
+            let nod_id = notification_details.nod_id.unwrap();
             retry_mechanims(
                 nod_id,
                 retry_count,
