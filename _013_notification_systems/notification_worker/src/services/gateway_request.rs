@@ -2,7 +2,7 @@ use crate::utils::error::NotificationWorkerErr;
 use reqwest::Response;
 use serde::Serialize;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct NotifyRequest {
     pub device_token: String,
     pub platform: String, // ios | android | sms | web
