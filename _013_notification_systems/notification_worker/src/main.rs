@@ -3,7 +3,7 @@ use dotenv::dotenv;
 use notification_worker::{
     make_connections::{get_db_pool, get_redis_conn},
     run,
-    services::process_job::NotificationNotificationDeliverables,
+    services::process_pending_jobs::process_pending_jobs,
     utils::error::NotificationWorkerErr,
 };
 use redis::{AsyncCommands, streams::StreamReadOptions};
@@ -12,7 +12,7 @@ use tracing::level_filters::LevelFilter;
 
 /*
     1. Start notification worker
-    $ cargo watch -q -c -w src/ -x "run -- --platform ios --consumer-name consumer-1 --priority low"
+    $ cargo watch -q -c -w src/ -x "run -- --fetch-limit-jobs 5 --platform ios --consumer-name consumer-2 --priority high --max-retry-count 5"
 
     2. Get groups info for specific stream
     $ XINFO GROUPS ios-0
@@ -59,8 +59,8 @@ pub struct ServerCli {
     #[arg(long, default_value = "")]
     callback_url: String,
 
-    #[arg(long, default_value = "group-1")]
-    r_stream_group_name: String,
+    #[arg(long, default_value = "group")]
+    redis_stream_group_name: String,
 }
 
 #[tokio::main]
@@ -76,7 +76,7 @@ async fn main() -> Result<(), NotificationWorkerErr> {
     let max_retry_count = scli.max_retry_count;
     let url_gateway = scli.url_gateway;
     let callback_url = scli.callback_url;
-    let r_stream_group_name = scli.r_stream_group_name;
+    let redis_stream_group_name = scli.redis_stream_group_name;
 
     let priority_n = if priority.to_lowercase().eq("low") {
         1 as u8
@@ -86,6 +86,7 @@ async fn main() -> Result<(), NotificationWorkerErr> {
         panic!("Didn't pass the right priority option. Should be either `low` or `high`!");
     };
 
+    let r_stream_group_name = format!("{}-{}", redis_stream_group_name, priority_n);
     let max_retry_count_n = max_retry_count.parse::<u8>()?;
 
     // 2. enable tracing
@@ -111,23 +112,12 @@ async fn main() -> Result<(), NotificationWorkerErr> {
     let db_conn = get_db_pool(&db_url, db_conn_workers).await;
     let mut q_conn = get_redis_conn(&q_url).await?;
 
-    // 4.5 destroy and recreate group
-    // XGROUP DESTROY ios-1 group-1
-    // XGROUP CREATE ios-1 group-1 0
-    let _ = q_conn
-        .clone()
-        .xgroup_destroy::<String, String, String>(
-            format!("{}-{}", platform, priority_n),
-            r_stream_group_name.to_string(),
-        )
-        .await;
-
     // 5. Create xgroup
     let _ = q_conn
         .clone()
         .xgroup_create::<String, String, String, String>(
             format!("{}-{}", platform, priority_n),
-            "group-1".to_string(),
+            r_stream_group_name.clone(),
             "0".to_string(),
         )
         .await;
@@ -137,7 +127,21 @@ async fn main() -> Result<(), NotificationWorkerErr> {
         .count(fetch_limit_jobs)
         // .block(sleep_milli_secs)
         .block(300)
-        .group("group-1", consumer_name);
+        .group(r_stream_group_name.clone(), consumer_name);
+
+    // 8. Process pending jobs before starting background jobs
+    process_pending_jobs(
+        priority_n,
+        max_retry_count_n,
+        platform,
+        r_stream_group_name,
+        q_stream_opts,
+        url_gateway,
+        callback_url,
+        db_conn,
+        &mut q_conn,
+    )
+    .await?;
 
     // 7. run worker
     run(
@@ -154,5 +158,12 @@ async fn main() -> Result<(), NotificationWorkerErr> {
     )
     .await?;
 
+    // 8. create a background job that periodically XAUTOCLAIM stale messages from dead consumers
+    /*
+       Every 30-60 seconds
+       XAUTOCLAIM idle > 5 min
+       Process
+       XACK
+    */
     Ok(())
 }
