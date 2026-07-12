@@ -1,13 +1,18 @@
+use std::time::Duration;
+
 use clap::Parser;
 use dotenv::dotenv;
 use notification_worker::{
     make_connections::{get_db_pool, get_redis_conn},
     run,
-    services::process_pending_jobs::process_pending_jobs,
+    services::{
+        background_clean_streams::clean_streams, process_pending_jobs::process_pending_jobs,
+    },
     utils::error::NotificationWorkerErr,
 };
 use redis::{AsyncCommands, streams::StreamReadOptions};
 
+use tokio::time::interval;
 use tracing::level_filters::LevelFilter;
 
 /*
@@ -61,6 +66,12 @@ pub struct ServerCli {
 
     #[arg(long, default_value = "group")]
     redis_stream_group_name: String,
+
+    #[arg(long, default_value_t = 30)]
+    binterval_scheduler_t: u64,
+
+    #[arg(long, default_value_t = 100)]
+    stream_trim_max_entries: usize,
 }
 
 #[tokio::main]
@@ -77,6 +88,8 @@ async fn main() -> Result<(), NotificationWorkerErr> {
     let url_gateway = scli.url_gateway;
     let callback_url = scli.callback_url;
     let redis_stream_group_name = scli.redis_stream_group_name;
+    let binterval_scheduler_t = scli.binterval_scheduler_t;
+    let stream_trim_max_entries = scli.stream_trim_max_entries;
 
     let priority_n = if priority.to_lowercase().eq("low") {
         1 as u8
@@ -91,7 +104,7 @@ async fn main() -> Result<(), NotificationWorkerErr> {
 
     // 2. enable tracing
     tracing_subscriber::fmt()
-        .with_max_level(LevelFilter::ERROR)
+        .with_max_level(LevelFilter::INFO)
         .init();
 
     let process_id = std::process::id();
@@ -113,52 +126,81 @@ async fn main() -> Result<(), NotificationWorkerErr> {
     let mut q_conn = get_redis_conn(&q_url).await?;
 
     // 5. Create xgroup
-    let _ = q_conn
+    match q_conn
         .clone()
         .xgroup_create::<String, String, String, String>(
             format!("{}-{}", platform, priority_n),
             r_stream_group_name.clone(),
             "0".to_string(),
         )
-        .await;
+        .await
+    {
+        Ok(_) => {}
+        Err(_) => {
+            let _ = q_conn
+                .xgroup_create_mkstream::<String, String, String, String>(
+                    format!("{}-{}", platform, priority_n),
+                    r_stream_group_name.clone(),
+                    "$".to_string(),
+                )
+                .await;
+        }
+    };
 
     // 6. Stream options
     let q_stream_opts = StreamReadOptions::default()
         .count(fetch_limit_jobs)
         // .block(sleep_milli_secs)
-        .block(300)
+        .block(100)
         .group(r_stream_group_name.clone(), consumer_name);
 
     // 8. Process pending jobs before starting background jobs
     process_pending_jobs(
         priority_n,
         max_retry_count_n,
-        platform,
-        r_stream_group_name,
-        q_stream_opts,
-        url_gateway,
-        callback_url,
-        db_conn,
+        platform.clone(),
+        r_stream_group_name.clone(),
+        &q_stream_opts,
+        url_gateway.clone(),
+        callback_url.clone(),
+        db_conn.clone(),
         &mut q_conn,
     )
     .await?;
 
-    // 7. run worker
+    // 7. start background cleaning
+    let platform1 = platform.clone();
+    let q_conn1 = q_conn.clone();
+    let _ = tokio::spawn(async move {
+        let mut scheduler = interval(Duration::from_secs(binterval_scheduler_t));
+        let platform = platform1.clone();
+        let mut q_conn = q_conn1.clone();
+        loop {
+            scheduler.tick().await;
+            let _ = clean_streams(
+                stream_trim_max_entries,
+                format!("{}-{}", platform.clone(), priority_n),
+                &mut q_conn,
+            )
+            .await;
+        }
+    });
+
+    // 8. run worker
     run(
         num_workers,
         priority_n,
         max_retry_count_n,
-        platform,
-        r_stream_group_name,
+        platform.clone(),
+        r_stream_group_name.clone(),
         q_stream_opts,
-        url_gateway,
-        callback_url,
-        db_conn,
+        url_gateway.clone(),
+        callback_url.clone(),
+        db_conn.clone(),
         &mut q_conn,
     )
     .await?;
-
-    // 8. create a background job that periodically XAUTOCLAIM stale messages from dead consumers
+    // 9. create a background job that periodically XAUTOCLAIM stale messages from dead consumers
     /*
        Every 30-60 seconds
        XAUTOCLAIM idle > 5 min
