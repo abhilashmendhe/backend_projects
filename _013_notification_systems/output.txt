@@ -1,0 +1,32 @@
+Make sure the gateway is restarted with:
+  FAIL_5XX_RATE=0.3 DROP_RATE=0.1 make gateway
+python3 eval/run.py adversarial --target http://localhost:8080
+Running 'adversarial' against http://localhost:8080
+  events=3000  rps=100  users=200
+  Reminder: restart the gateway with FAIL_5XX_RATE=0.3 DROP_RATE=0.1
+            for the full adversarial profile.
+Submitting 3000 events to http://localhost:8080 at ~100 rps
+
+results after 44.8s:
+  submitted (incl. retries): 3158
+  unique events:             3000
+  accepted (2xx):            2490
+  rejected (4xx+):           97
+  errored (no resp):         571
+  /notify latency:           p50=8426ms  p95=14070ms  p99=16088ms
+
+Waiting 5s for in-flight retries to complete…
+
+=== Scorecard: adversarial ===
+  total_attempts           119
+  unique_pairs             119
+  delivered_pairs          85
+  duplicate_pairs          0
+  delivery_rate             71.43%
+  duplicate_rate             0.00%
+  delivery_p50_ms             200.0
+  delivery_p95_ms             200.0
+  delivery_p99_ms             200.0
+
+  ⚠ delivery rate below 99% — events are being lost or never retried
+
