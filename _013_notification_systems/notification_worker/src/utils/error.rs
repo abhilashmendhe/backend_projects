@@ -3,9 +3,13 @@ use std::{env::VarError, num::ParseIntError};
 use redis::RedisError;
 use reqwest::header::ToStrError;
 use thiserror::Error;
+use tokio::task::JoinError;
 
 #[derive(Debug, Error)]
 pub enum NotificationWorkerErr {
+    #[error("{}", 0)]
+    StdIO(#[from] std::io::Error),
+
     #[error("{}", 0)]
     VarError(#[from] VarError),
 
@@ -23,4 +27,7 @@ pub enum NotificationWorkerErr {
 
     #[error("{}", 0)]
     ReqwestErr(#[from] reqwest::Error),
+
+    #[error("{}", 0)]
+    JoinErr(#[from] JoinError),
 }
