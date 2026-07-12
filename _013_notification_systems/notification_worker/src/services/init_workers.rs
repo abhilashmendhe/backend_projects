@@ -4,10 +4,12 @@ use sqlx::PgPool;
 use tokio::sync::{Mutex, mpsc::Receiver};
 
 use redis::{aio::MultiplexedConnection, streams::StreamId};
+use tokio_util::sync::CancellationToken;
 
 use crate::{services::process_job::process_job, utils::error::NotificationWorkerErr};
 
 pub async fn spawn_workers(
+    shutdown: CancellationToken,
     priority: u8,
     max_retry_count: u8,
     platform: String,
@@ -29,29 +31,39 @@ pub async fn spawn_workers(
         let url_gateway = url_gateway.clone();
         let callback_url = callback_url.clone();
         let q_conn = q_conn.clone();
+        let shutdown = shutdown.clone();
         tokio::spawn(async move {
             loop {
-                if let Some(job) = {
-                    let mut rx_l = rx.lock().await;
-                    rx_l.recv().await
-                } {
-                    // process job
-                    // println!("worker {nw} {:?}", job);
-                    let _ = process_job(
-                        priority,
-                        max_retry_count,
-                        platform.clone(),
-                        r_stream_group_name.clone(),
-                        job,
-                        url_gateway.clone(),
-                        callback_url.clone(),
-                        db_conn.clone(),
-                        &mut q_conn.clone(),
-                    )
-                    .await;
-                } else {
-                    break;
-                };
+                tokio::select! {
+                    _ = shutdown.cancelled() => {
+                        println!("Fetch job worker stopping");
+                        break;
+                    }
+                    job = async {
+                        let mut rx_l = rx.lock().await;
+                        rx_l.recv().await
+                    } => {
+                        match job {
+                            Some(job) => {
+                                // process job
+                                // println!("worker {nw} {:?}", job);
+                                let _ = process_job(
+                                    priority,
+                                    max_retry_count,
+                                    platform.clone(),
+                                    r_stream_group_name.clone(),
+                                    job,
+                                    url_gateway.clone(),
+                                    callback_url.clone(),
+                                    db_conn.clone(),
+                                    &mut q_conn.clone(),
+                                )
+                                .await;
+                            }
+                            None => break,
+                        }
+                    }
+                }
             }
         });
     }
