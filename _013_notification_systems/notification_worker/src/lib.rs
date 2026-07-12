@@ -4,6 +4,7 @@ use redis::{
     streams::{StreamId, StreamReadOptions, StreamReadReply},
 };
 use sqlx::PgPool;
+use tokio_util::sync::CancellationToken;
 
 use crate::utils::error::NotificationWorkerErr;
 
@@ -14,6 +15,7 @@ pub mod services;
 pub mod utils;
 
 pub async fn run(
+    shutdown: CancellationToken,
     num_workers: u32,
     priority: u8,
     max_retry_count: u8,
@@ -28,6 +30,7 @@ pub async fn run(
     // 1. create channels
     let (tx, rx) = tokio::sync::mpsc::channel::<StreamId>(1000);
     let _ = spawn_workers(
+        shutdown.clone(),
         priority,
         max_retry_count,
         platform.clone(),
@@ -80,7 +83,7 @@ pub async fn run(
                             }
                         }
                     }
-            _ = tokio::signal::ctrl_c() => {
+            _ = shutdown.cancelled() => {
                 println!("\nCtrl-c command received!");
                 println!("Gracefully shutting down worker node!");
                 break;
