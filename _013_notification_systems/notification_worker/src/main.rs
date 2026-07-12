@@ -13,6 +13,7 @@ use notification_worker::{
 use redis::{AsyncCommands, streams::StreamReadOptions};
 
 use tokio::time::interval;
+use tokio_util::sync::CancellationToken;
 use tracing::level_filters::LevelFilter;
 
 /*
@@ -168,38 +169,57 @@ async fn main() -> Result<(), NotificationWorkerErr> {
     )
     .await?;
 
+    let shutdown = CancellationToken::new();
+
+    let cleaner_token = shutdown.clone();
+    // let run_token = shutdown.clone();
+
     // 7. start background cleaning
     let platform1 = platform.clone();
     let q_conn1 = q_conn.clone();
-    let _ = tokio::spawn(async move {
+    let cleaner_token1 = cleaner_token.clone();
+    let cleaner = tokio::spawn(async move {
         let mut scheduler = interval(Duration::from_secs(binterval_scheduler_t));
         let platform = platform1.clone();
         let mut q_conn = q_conn1.clone();
         loop {
-            scheduler.tick().await;
-            let _ = clean_streams(
-                stream_trim_max_entries,
-                format!("{}-{}", platform.clone(), priority_n),
-                &mut q_conn,
-            )
-            .await;
+            tokio::select! {
+                _ = cleaner_token1.cancelled() => {
+                    println!("Cleaner stopping");
+                    break;
+                }
+
+                _ = scheduler.tick() => {
+                    // println!("tikcin...");
+                    let _ = clean_streams(
+                        stream_trim_max_entries,
+                        format!("{}-{}", platform.clone(), priority_n),
+                        &mut q_conn,
+                    )
+                    .await;
+                }
+            }
         }
     });
-
+    println!("will start fetch worker");
     // 8. run worker
-    run(
-        num_workers,
-        priority_n,
-        max_retry_count_n,
-        platform.clone(),
-        r_stream_group_name.clone(),
-        q_stream_opts,
-        url_gateway.clone(),
-        callback_url.clone(),
-        db_conn.clone(),
-        &mut q_conn,
-    )
-    .await?;
+    let shutdown1 = shutdown.clone();
+    let mut q_conn1 = q_conn.clone();
+    let fetch_worker = tokio::spawn(async move {
+        run(
+            shutdown1,
+            num_workers,
+            priority_n,
+            max_retry_count_n,
+            platform.clone(),
+            r_stream_group_name.clone(),
+            q_stream_opts,
+            url_gateway.clone(),
+            callback_url.clone(),
+            db_conn.clone(),
+            &mut q_conn1,
+        ).await
+    });
     // 9. create a background job that periodically XAUTOCLAIM stale messages from dead consumers
     /*
        Every 30-60 seconds
@@ -207,5 +227,12 @@ async fn main() -> Result<(), NotificationWorkerErr> {
        Process
        XACK
     */
+    // Wait for Ctrl+C
+    tokio::signal::ctrl_c().await?;
+    println!("Ctrl+C received");
+    shutdown.cancel();
+    fetch_worker.await??;
+    cleaner.await?;
+
     Ok(())
 }
