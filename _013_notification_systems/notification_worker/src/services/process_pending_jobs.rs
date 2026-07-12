@@ -12,7 +12,7 @@ pub async fn process_pending_jobs(
     max_retry_count: u8,
     platform: String,
     r_stream_group_name: String,
-    q_stream_opts: StreamReadOptions,
+    q_stream_opts: &StreamReadOptions,
     url_gateway: String,
     callback_url: String,
     db_conn: PgPool,
