@@ -29,7 +29,7 @@ struct ServerCli {
     #[arg(short, long, default_value_t = 4)]
     db_conn_workers: u32,
 
-    #[arg(short, long, default_value_t = 5)]
+    #[arg(short, long, default_value_t = 100)]
     binterval_scheduler_t: u64,
 
     #[arg(long, default_value_t = 4)]
@@ -90,7 +90,7 @@ async fn main() -> Result<(), NotificationServerErr> {
 
     // 8. Run background enqueue job
     let _ = tokio::spawn(async move {
-        let mut scheduler = interval(Duration::from_secs(binterval_scheduler_t));
+        let mut scheduler = interval(Duration::from_millis(binterval_scheduler_t));
         loop {
             scheduler.tick().await;
             // println!("running in background");
