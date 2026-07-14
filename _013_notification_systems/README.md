@@ -164,20 +164,30 @@ $ cd _013_notification_systems
 
 
 ## Run
-
-- To run gateway
+```bash
+1. To run API gateway
+$ cd api_gateway/
 $ uvicorn main:app --host 0.0.0.0 --port 8080 --reload
 
-- To create user server
+2. To run register users and devices server
+$ cd user-device-register-service/
 $ python3 -m uvicorn main:app --host 0.0.0.0 --port 56732 --reload
 
-- To run notification server
+3. To run notification server
+$ cd notification_server
 $ cargo run -- --addr localhost -p 60001 --background-fetch-limit-rows 500
 
-- To run notification worker1 for ios low priority
+4.  To run notification workers
+$ cd notification_worker
+
+# To fetch ios notifications from streams for low priorities
 $  cargo run -- --fetch-limit-jobs 200 --platform ios --consumer-name consumer-1 --priority low --max-retry-count 3
 $  cargo run -- --fetch-limit-jobs 200 --platform ios --consumer-name consumer-2 --priority low --max-retry-count 3
 
+# To fetch ios notifications from streams for high priorities
 - To run notification worker1 for ios high priority
 $  cargo run -- --fetch-limit-jobs 100 --platform ios --consumer-name consumer-3 --priority high --max-retry-count 5
 $  cargo run -- --fetch-limit-jobs 100 --platform ios --consumer-name consumer-4 --priority high --max-retry-count 5
+```
+
+One can customize parameters to run workers for different push devices.
