@@ -15,6 +15,9 @@ pub enum WalletInfoErr {
     #[error("{}", .0)]
     RpcErr(#[from] RpcError<TransportErrorKind>),
 
-    #[error("{}",.0)]
+    #[error("{}", .0)]
     FromHexErr(#[from] FromHexError),
+
+    #[error("{}", .0)]
+    InvalidAddress(String),
 }
