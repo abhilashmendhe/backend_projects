@@ -11,10 +11,17 @@ pub async fn run(rpc_url: String, wallets: Vec<String>) -> Result<(), WalletInfo
     let provider = ProviderBuilder::new().connect(&rpc_url).await?;
 
     for wallet in wallets {
+        
         println!("wallet addr: {}", wallet);
-        let wallet_addr = Address::from_str(&wallet)?;
+
+        let wallet_addr = match Address::from_str(&wallet) {
+            Ok(address) => {address},
+            Err(_) => {
+                return Err(WalletInfoErr::InvalidAddress(format!("{} is invalid.", wallet)));
+            }
+        };
         // println!("{:?}",  wallet_addr);
-        wallet_info(&provider, wallet_addr).await;
+        wallet_info(&provider, wallet_addr).await?;
     }
     Ok(())
 }
