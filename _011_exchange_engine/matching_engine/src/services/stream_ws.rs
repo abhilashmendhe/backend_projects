@@ -1,9 +1,35 @@
+use crate::{
+    services::{BuffEvents, parse_string_array_to_f64},
+    utils::error::ExchangeErr,
+};
 use futures_util::StreamExt;
+use rust_decimal::Decimal;
+use serde::Deserialize;
 use std::time::Duration;
-use tokio::time::timeout;
+use tokio::{sync::mpsc::Sender, time::timeout};
 use tokio_tungstenite::connect_async;
 
-pub async fn start_streaming(url: String, connection_timeout: Duration) {
+#[derive(Debug, Deserialize)]
+pub struct WSResponse {
+    pub e: String,
+    pub E: usize,
+    pub s: String,
+    pub U: usize,
+    pub u: usize,
+
+    #[serde(deserialize_with = "parse_string_array_to_f64")]
+    pub b: Vec<[Decimal; 2]>,
+
+    #[serde(deserialize_with = "parse_string_array_to_f64")]
+    pub a: Vec<[Decimal; 2]>,
+}
+
+pub async fn start_streaming(
+    url: String,
+    connection_timeout: Duration,
+    sender: Sender<BuffEvents>,
+) -> Result<(), ExchangeErr> {
+    println!("hi start streaming");
     match timeout(connection_timeout, connect_async(url)).await {
         Ok(Ok((ws_stream, response))) => {
             // println!("{:?}", response);
@@ -17,7 +43,11 @@ pub async fn start_streaming(url: String, connection_timeout: Duration) {
 
             while let Some(message) = read.next().await {
                 match message {
-                    Ok(msg) => println!("Received a message: {}", msg),
+                    Ok(msg) => {
+                        let ws_response = serde_json::from_str::<WSResponse>(&msg.to_string())?;
+                        // println!("{:?}", ws_response);
+                        let _ = sender.send(BuffEvents::WSStream(ws_response)).await;
+                    }
                     Err(e) => eprintln!("Error receiving message: {}", e),
                 }
             }
@@ -35,4 +65,5 @@ pub async fn start_streaming(url: String, connection_timeout: Duration) {
             // ))
         }
     }
+    Ok(())
 }
