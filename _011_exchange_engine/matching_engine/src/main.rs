@@ -1,24 +1,38 @@
-use futures_util::StreamExt;
-use tokio_tungstenite::connect_async;
+use clap::Parser;
+use matching_engine::{build_orderbook, utils::error::ExchangeErr};
+
+#[derive(Debug, Parser)]
+pub struct ServerCli {
+    #[arg(long)]
+    ticker: String,
+
+    #[arg(long, default_value_t = 100)]
+    timeunit: usize,
+
+    #[arg(long, default_value_t = 5)]
+    connection_timeout: u64,
+
+    #[arg(long, default_value_t = 5000)]
+    snapshot_limit: u64,
+}
 
 #[tokio::main]
-async fn main() {
-    let uri = "wss://stream.binance.us:9443/ws/btcusdt@depth@100ms";
-    let (ws_stream, response) = connect_async(uri).await.unwrap();
-    println!("{}", response.status());
-
-    for (ref header, _value) in response.headers() {
-        println!("* {}", header);
-    }
-
-    let (mut write, mut read) = ws_stream.split();
-
-    while let Some(message) = read.next().await {
-        match message {
-            Ok(msg) => println!("Received a message: {}", msg),
-            Err(e) => eprintln!("Error receiving message: {}", e),
-        }
-    }
-
-    println!("hi");
+async fn main() -> Result<(), ExchangeErr> {
+    // 1. parse cli
+    let scli = ServerCli::parse();
+    let ticker = scli.ticker;
+    let timeunit = scli.timeunit;
+    let connection_timeout = scli.connection_timeout;
+    let snapshot_limit = scli.snapshot_limit;
+    let rest_url = format!(
+        "https://api.binance.com/api/v3/depth?symbol={}&limit={}",
+        ticker, snapshot_limit
+    );
+    let ws_url = format!(
+        "wss://stream.binance.us:9443/ws/{}@depth@{}ms",
+        ticker.to_ascii_lowercase(),
+        timeunit
+    );
+    build_orderbook(rest_url, ws_url, connection_timeout).await?;
+    Ok(())
 }
