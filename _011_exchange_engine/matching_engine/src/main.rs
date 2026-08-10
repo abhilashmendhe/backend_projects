@@ -29,7 +29,7 @@ async fn main() -> Result<(), ExchangeErr> {
         ticker, snapshot_limit
     );
     let ws_url = format!(
-        "wss://stream.binance.us:9443/ws/{}@depth@{}ms",
+        "wss://stream.binance.com:9443/ws/{}@depth@{}ms",
         ticker.to_ascii_lowercase(),
         timeunit
     );
