@@ -9,19 +9,20 @@ use std::time::Duration;
 use tokio::{sync::mpsc::Sender, time::timeout};
 use tokio_tungstenite::connect_async;
 
+#[allow(non_snake_case)]
 #[derive(Debug, Deserialize)]
 pub struct WSResponse {
-    pub e: String,
-    pub E: usize,
-    pub s: String,
-    pub U: usize,
-    pub u: usize,
+    pub e: String, // Event type, in this case, depthUpdate
+    pub E: usize,  // Event time at which the request was made in milliseconds
+    pub s: String, // Symbol requested, e.g. BNBUSDT
+    pub U: usize,  // First update ID in the event
+    pub u: usize,  // Final update ID in the event
 
     #[serde(deserialize_with = "parse_string_array_to_f64")]
-    pub b: Vec<[Decimal; 2]>,
+    pub b: Vec<[Decimal; 2]>, // Array of bid updates, where each entry contains [price, quantity]
 
     #[serde(deserialize_with = "parse_string_array_to_f64")]
-    pub a: Vec<[Decimal; 2]>,
+    pub a: Vec<[Decimal; 2]>, // Array of ask updates, where each entry contains [price, quantity]
 }
 
 pub async fn start_streaming(
@@ -29,15 +30,11 @@ pub async fn start_streaming(
     connection_timeout: Duration,
     sender: Sender<BuffEvents>,
 ) -> Result<(), ExchangeErr> {
-    println!("hi start streaming");
     match timeout(connection_timeout, connect_async(url)).await {
-        Ok(Ok((ws_stream, response))) => {
-            // println!("{:?}", response);
-            println!("{}", response.status());
-
-            for (ref header, _value) in response.headers() {
-                println!("* {}", header);
-            }
+        Ok(Ok((ws_stream, _response))) => {
+            // for (ref header, _value) in response.headers() {
+            //     println!("* {}", header);
+            // }
 
             let (_, mut read) = ws_stream.split();
 
