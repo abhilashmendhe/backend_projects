@@ -4,6 +4,7 @@ use serde::de::{Deserialize, Deserializer};
 use crate::services::{fetch_rest::HttpResponseSnapshot, stream_ws::WSResponse};
 
 pub mod fetch_rest;
+pub mod process_buff_events;
 pub mod stream_ws;
 
 #[derive(Debug)]

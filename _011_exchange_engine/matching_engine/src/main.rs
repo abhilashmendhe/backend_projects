@@ -1,6 +1,11 @@
 use clap::Parser;
 use matching_engine::{build_orderbook, utils::error::ExchangeErr};
 
+/*
+To run:
+$ cargo run -- --ticker BTCUSDT --snapshot-limit 200
+*/
+
 #[derive(Debug, Parser)]
 pub struct ServerCli {
     #[arg(long)]
@@ -33,6 +38,6 @@ async fn main() -> Result<(), ExchangeErr> {
         ticker.to_ascii_lowercase(),
         timeunit
     );
-    build_orderbook(rest_url, ws_url, connection_timeout).await?;
+    build_orderbook(ticker, rest_url, ws_url, connection_timeout).await?;
     Ok(())
 }
