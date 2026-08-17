@@ -34,14 +34,16 @@ pub async fn process_events(
                 orderbook.bids.clear();
                 orderbook.last_update_id = snapshot.last_update_id;
                 for ask in http_response_snapshot.asks {
-                    if !ask[1].is_zero() {
-                        orderbook.asks.insert(ask[0], ask[1]);
+                    if ask[0].is_zero() || ask[1].is_zero() {
+                        continue;
                     }
+                    orderbook.asks.insert(ask[0], ask[1]);
                 }
                 for bid in http_response_snapshot.bids {
-                    if !bid[1].is_zero() {
-                        orderbook.bids.insert(Reverse(bid[0]), bid[1]);
+                    if bid[0].is_zero() || bid[1].is_zero() {
+                        continue;
                     }
+                    orderbook.bids.insert(Reverse(bid[0]), bid[1]);
                 }
             }
             BuffEvents::WSStream(wsresponse) => {
@@ -49,9 +51,9 @@ pub async fn process_events(
                 if first_b_u <= 0 {
                     first_b_u = wsresponse.U;
                     if snapshot.last_update_id > 0 && snapshot.last_update_id < first_b_u {
-                        println!("1. Not latest snapshot....");
+                        // println!("1. Not latest snapshot....");
                         fetch_snapshot(rest_url.clone(), sender.clone()).await?;
-                        println!("2. Just fetched latest snapshot....\n");
+                        // println!("2. Just fetched latest snapshot....\n");
                     }
                 }
                 if wsresponse.U <= snapshot.last_update_id + 1
