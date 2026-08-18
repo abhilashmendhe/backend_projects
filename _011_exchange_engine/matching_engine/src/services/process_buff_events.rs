@@ -8,7 +8,7 @@ pub async fn process_events(
     sender: Sender<BuffEvents>,
     mut receiver: Receiver<BuffEvents>,
 ) -> Result<(), ExchangeErr> {
-    let mut orderbook = Orderbook::new(ticker, 0, 0);
+    let mut orderbook = Orderbook::new(ticker, 0, 0, false);
     while let Some(buff_events) = receiver.recv().await {
         // println!("{:?}", buff_events);
         // println!(

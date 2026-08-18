@@ -17,16 +17,18 @@ pub struct Orderbook {
     pub ticker: String,
     pub last_update_id: usize,
     pub first_b_u: usize, // first buffered update
+    pub found_event: bool,
     pub asks: BTreeMap<Decimal, Decimal>,
     pub bids: BTreeMap<Reverse<Decimal>, Decimal>,
 }
 
 impl Orderbook {
-    pub fn new(ticker: String, last_update_id: usize, first_b_u: usize) -> Self {
+    pub fn new(ticker: String, last_update_id: usize, first_b_u: usize, found_event: bool) -> Self {
         Self {
             ticker,
             last_update_id,
             first_b_u,
+            found_event,
             bids: BTreeMap::new(),
             asks: BTreeMap::new(),
         }
@@ -56,7 +58,6 @@ impl Orderbook {
         sender: Sender<BuffEvents>,
         wsresponse: WSResponse,
     ) -> Result<(), ExchangeErr> {
-        let mut found_event = false;
         if self.first_b_u <= 0 {
             self.first_b_u = wsresponse.U;
             if self.last_update_id > 0 && self.last_update_id < self.first_b_u {
@@ -66,9 +67,9 @@ impl Orderbook {
             }
         }
         if wsresponse.U <= self.last_update_id + 1 && self.last_update_id + 1 <= wsresponse.u {
-            found_event = true;
+            self.found_event = true;
         }
-        if found_event {
+        if self.found_event {
             for ask in wsresponse.a {
                 if !ask[1].is_zero() {
                     self.asks.insert(ask[0], ask[1]);
