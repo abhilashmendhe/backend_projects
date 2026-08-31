@@ -381,12 +381,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bincode"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd6a120d2e16b3e1b4a24bd70f23b12d3e16b81f113364a26935f8db7245452d"
-
-[[package]]
 name = "bitflags"
 version = "2.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2326,10 +2320,11 @@ name = "streaming_services"
 version = "0.1.0"
 dependencies = [
  "actix-web",
- "bincode",
  "chrono",
  "clap",
  "dotenv",
+ "prost",
+ "prost-types",
  "serde",
  "serde_json",
  "sqlx",
