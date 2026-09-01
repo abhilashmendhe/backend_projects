@@ -1,7 +1,8 @@
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
+#[repr(i32)]
 #[serde(rename_all = "snake_case")]
 pub enum EventType {
     Heartbeat,
@@ -12,7 +13,8 @@ pub enum EventType {
     NetStatus,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
+#[repr(i32)]
 #[serde(rename_all = "snake_case")]
 pub enum SleepState {
     Asleep,
