@@ -1,20 +1,24 @@
 use std::{sync::atomic::AtomicU64, time::Instant};
 
-use crate::utils::config::Config;
+use tonic::transport::Channel;
+
+use crate::{stream_service::message_stream_client::MessageStreamClient, utils::config::Config};
 
 #[derive(Debug)]
 pub struct AppState {
     visit_count: AtomicU64,
     alive_time: Instant,
     config: Config,
+    grpc_client: MessageStreamClient<Channel>,
 }
 
 impl AppState {
-    pub fn new(config: Config) -> Self {
+    pub fn new(config: Config, grpc_client: MessageStreamClient<Channel>) -> Self {
         Self {
             visit_count: AtomicU64::new(0),
             alive_time: Instant::now(),
             config,
+            grpc_client,
         }
     }
 
@@ -28,5 +32,8 @@ impl AppState {
     }
     pub fn config(&self) -> Config {
         self.config
+    }
+    pub fn grpc_client(&self) -> MessageStreamClient<Channel> {
+        self.grpc_client.clone()
     }
 }
