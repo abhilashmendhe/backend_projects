@@ -5,7 +5,7 @@ package stream_service;
 import "google/protobuf/timestamp.proto";
 
 service MessageStream {
-    rpc Publish(stream PublishRequest) returns (stream PublishResponse);
+    rpc Publish(PublishRequest) returns (PublishResponse);
 }
 
 message PublishRequest {
