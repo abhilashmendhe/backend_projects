@@ -1,4 +1,4 @@
-use std::net::AddrParseError;
+use std::{net::AddrParseError, num::ParseIntError};
 
 use thiserror::Error;
 
@@ -6,6 +6,9 @@ use thiserror::Error;
 pub enum StreamServerErr {
     #[error("{}", 0)]
     IoErr(#[from] std::io::Error),
+
+    #[error("{}", 0)]
+    ParseIntError(#[from] ParseIntError),
 
     #[error("{}", 0)]
     AddrParseErr(#[from] AddrParseError),
