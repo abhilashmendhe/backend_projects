@@ -1,5 +1,7 @@
 use std::{
-    fs::{File, OpenOptions, read_dir}, io::{Seek, Write}, path::Path,
+    fs::{File, OpenOptions, read_dir},
+    io::{Seek, Write},
+    path::Path,
 };
 
 use base64::{Engine, engine::general_purpose};
@@ -38,18 +40,27 @@ impl WalLogger {
             append_only_file,
             r_start_pos: 0,
             r_end_pos: 0,
-            lsn
+            lsn,
         })
     }
 
     pub fn write_log(&mut self, publish_request: &PublishRequest) -> Result<(), StreamServerErr> {
         // 1. create a aof payload
         let enc_str = general_purpose::STANDARD.encode(&publish_request.payload);
-        let aof_payload = format!("message-id:{};payload:{};timestamp:{}", publish_request.message_id, enc_str, publish_request.timestamp);
+        let aof_payload = format!(
+            "message-id:{};payload:{};timestamp:{}",
+            publish_request.message_id, enc_str, publish_request.timestamp
+        );
         // println!("aof-payload: {}", aof_payload);
         let mut crc_aof_payload = flate2::Crc::new();
         crc_aof_payload.update(aof_payload.as_bytes());
-        let full_format = format!("lsn:{};crc:{};length:{};{}\n",self.lsn,crc_aof_payload.sum(),aof_payload.len(),aof_payload);
+        let full_format = format!(
+            "lsn:{};crc:{};length:{};{}\n",
+            self.lsn,
+            crc_aof_payload.sum(),
+            aof_payload.len(),
+            aof_payload
+        );
         self.append_only_file.write_all(full_format.as_bytes())?;
         self.lsn = self.append_only_file.seek(std::io::SeekFrom::End(0))?;
         Ok(())
