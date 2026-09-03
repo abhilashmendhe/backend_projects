@@ -19,9 +19,9 @@ pub mod stream_service {
 }
 /*
     To run:
-    $ cargo run --bin ingestion_service -- --addr localhost --port 8080
+    $ cargo run --bin ingestion_service -- --addr localhost --port 8080 --grpc-addr localhost --grpc-port 50051
 
-    $ cargo watch  -q -c -w src/ingestion_service -x "run -- --addr localhost -p 8080"
+    $ cargo watch  -q -c -w src/ingestion_service -x "run --bin ingestion_service -- --addr localhost --port 8080 --grpc-addr localhost --grpc-port 50051"
 */
 
 #[derive(Debug, Parser)]

@@ -62,7 +62,7 @@ pub async fn req_post_events(
     let publish_request = PublishRequest {
         message_id: uuid::Uuid::new_v4().to_string(),
         payload,
-        timestamp: Utc::now().timestamp(),
+        timestamp: Utc::now().timestamp_micros(),
     };
 
     // 5. Make grpc request
