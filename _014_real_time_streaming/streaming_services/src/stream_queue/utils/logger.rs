@@ -67,11 +67,14 @@ impl WalLogger {
         })
     }
 
-    pub fn write_log(&mut self, publish_request: &PublishRequest) -> Result<(), StreamServerErr> {
+    pub fn write_log(
+        &mut self,
+        publish_request: &PublishRequest,
+    ) -> Result<(u64, u64), StreamServerErr> {
         // 1. create a aof payload
         let enc_str = general_purpose::STANDARD.encode(&publish_request.payload);
         let aof_payload = format!(
-            "message-id:{};payload:{};timestamp:{}",
+            "status:queued;message-id:{};payload:{};timestamp:{}",
             publish_request.message_id, enc_str, publish_request.timestamp
         );
         // println!("aof-payload: {}", aof_payload);
@@ -95,7 +98,9 @@ impl WalLogger {
                 self.aof_folder_path, zeros, self.file_log_num
             ))?;
         }
+        let start_offset = self.lsn;
         self.lsn = self.append_only_file.seek(std::io::SeekFrom::End(0))?;
-        Ok(())
+        let end_offset = self.lsn;
+        Ok((start_offset, end_offset))
     }
 }
