@@ -5,8 +5,12 @@ use std::{
 };
 
 use base64::{Engine, engine::general_purpose};
+use chrono::Utc;
 
-use crate::{create_server::stream_server::PublishRequest, utils::errors::StreamServerErr};
+use crate::{
+    create_server::stream_server::{AckRequest, PublishRequest},
+    utils::errors::StreamServerErr,
+};
 
 #[derive(Debug)]
 #[allow(unused)]
@@ -18,6 +22,12 @@ pub struct WalLogger {
     r_start_pos: i64,
     r_end_pos: i64,
     lsn: u64,
+}
+
+#[derive(Debug)]
+pub enum GotRequest<'a> {
+    AckRequest(&'a AckRequest),
+    PublishRequest(&'a PublishRequest),
 }
 
 impl WalLogger {
@@ -69,14 +79,28 @@ impl WalLogger {
 
     pub fn write_log(
         &mut self,
-        publish_request: &PublishRequest,
+        // publish_request: &PublishRequest,
+        got_request: GotRequest,
     ) -> Result<(u64, u64), StreamServerErr> {
         // 1. create a aof payload
-        let enc_str = general_purpose::STANDARD.encode(&publish_request.payload);
-        let aof_payload = format!(
-            "status:queued;message-id:{};payload:{};timestamp:{}",
-            publish_request.message_id, enc_str, publish_request.timestamp
-        );
+        let aof_payload = match got_request {
+            GotRequest::PublishRequest(publish_request) => {
+                let enc_str = general_purpose::STANDARD.encode(&publish_request.payload);
+                format!(
+                    "status:queued;message-id:{};payload:{};timestamp:{}",
+                    publish_request.message_id, enc_str, publish_request.timestamp
+                )
+            }
+            GotRequest::AckRequest(ack_request) => {
+                format!(
+                    "status:ack;message-id:{};offset:{};timestamp:{}",
+                    ack_request.message_id,
+                    ack_request.offset,
+                    Utc::now().timestamp_micros()
+                )
+            }
+        };
+
         // println!("aof-payload: {}", aof_payload);
         let mut crc_aof_payload = flate2::Crc::new();
         crc_aof_payload.update(aof_payload.as_bytes());
