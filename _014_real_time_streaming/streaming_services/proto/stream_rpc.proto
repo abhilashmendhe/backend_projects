@@ -6,7 +6,8 @@ import "google/protobuf/timestamp.proto";
 
 service MessageStream {
     rpc Publish(PublishRequest) returns (PublishResponse);
-    rpc Consumer(stream ConsumerRequest) returns (stream ConsumerResponse);
+    rpc Consumer(ConsumerRequest) returns (stream ConsumerResponse);
+    rpc Ack(AckRequest) returns (AckResponse);
 }
 
 message PublishRequest {
@@ -29,18 +30,16 @@ message ConsumerResponse {
     int64 timestamp = 4;
 }
 
-message Ack {
+message ConsumerRequest {}
+
+message AckRequest {
     uint64 offset = 1;
+    string message_id = 2;
 }
 
-message ConsumerRequest {
-    oneof request {
-        Subscribe subscribe = 1;
-        Ack ack = 2;
-    }
+message AckResponse {
+    bool accepted = 1;
 }
-
-message Subscribe {}
 
 message Event {
     string device_id = 1;
