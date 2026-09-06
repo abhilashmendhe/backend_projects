@@ -1,17 +1,17 @@
-use std::pin::Pin;
+use std::{pin::Pin, time::Duration};
 
 use tokio::sync::{
     Mutex,
     mpsc::{Receiver, Sender},
 };
 use tokio_stream::{Stream, StreamExt, wrappers::ReceiverStream};
-use tonic::{Request, Response, Status, Streaming, async_trait};
+use tonic::{Request, Response, Status, async_trait};
 use tracing::error;
 
 use crate::{
     create_server::stream_server::{
-        ConsumerRequest, ConsumerResponse, PublishRequest, PublishResponse,
-        consumer_request::Request as CRequest, message_stream_server::MessageStreamServer,
+        AckRequest, AckResponse, ConsumerRequest, ConsumerResponse, PublishRequest,
+        PublishResponse, message_stream_server::MessageStreamServer,
     },
     utils::app_data::StreamAppData,
 };
@@ -25,11 +25,11 @@ pub struct StreamServer {
     app_data: Mutex<StreamAppData>,
     tx: Sender<(u64, PublishRequest)>,
     rx: Mutex<Receiver<(u64, PublishRequest)>>,
+    // consumers: Vec
 }
 
 #[async_trait]
 impl stream_server::message_stream_server::MessageStream for StreamServer {
-    // type ConsumerStream = Pin<Box<dyn Stream<Item = Result<ConsumerResponse, Status>>+Send>>;
     type ConsumerStream = Pin<Box<dyn Stream<Item = Result<ConsumerResponse, Status>> + Send>>;
 
     async fn publish(
@@ -38,8 +38,9 @@ impl stream_server::message_stream_server::MessageStream for StreamServer {
     ) -> Result<Response<PublishResponse>, Status> {
         // 1. Get app-data, and tx
         let tx = self.tx.clone();
-        let app_data = &mut self.app_data.lock().await;
-        let w_logger = &mut app_data.logger;
+        // let app_data = &mut self.app_data.lock().await;
+        // let w_logger = &mut app_data.logger;
+        let w_logger = { &mut self.app_data.lock().await.logger };
 
         // 2. read publish request
         let publish_request = request.into_inner();
@@ -47,7 +48,9 @@ impl stream_server::message_stream_server::MessageStream for StreamServer {
             println!("Please halt..");
         }
         // 3. Append publish request to wal-log
-        let (start_offset, _end_offset) = match w_logger.write_log(&publish_request) {
+        let (start_offset, _end_offset) = match w_logger.write_log(
+            crate::utils::logger::GotRequest::PublishRequest(&publish_request),
+        ) {
             Ok((start_offset, _end_offset)) => (start_offset, _end_offset),
             Err(_) => (0, 0),
         };
@@ -82,69 +85,73 @@ impl stream_server::message_stream_server::MessageStream for StreamServer {
 
     async fn consumer(
         &self,
-        req: Request<Streaming<ConsumerRequest>>,
+        req: Request<ConsumerRequest>,
     ) -> Result<Response<Self::ConsumerStream>, Status> {
-        let rx = &mut self.rx.lock().await;
-        let (offset, publish_request) = match rx.recv().await {
-            Some(event) => event,
-            None => {
+        println!("\tclient connected from: {:?}", req.remote_addr());
+        // 1. get the rx
+        let (offset, consumer_resp) = {
+            let mut mut_rx = self.rx.lock().await;
+            if let Some(consumer_resp) = mut_rx.recv().await {
+                (consumer_resp.0, consumer_resp.1)
+            } else {
                 return Err(Status::new(
                     tonic::Code::Unavailable,
-                    "Events unavailable to process!".to_string(),
+                    "No data available to process!",
                 ));
             }
         };
-        println!("{} -> {:?}", offset, publish_request);
-        let mut in_stream = req.into_inner();
-        let (stream_tx, stream_rx) = tokio::sync::mpsc::channel(128);
 
+        // 2. create infinite stream
+        let repeat = std::iter::repeat(ConsumerResponse {
+            offset,
+            message_id: consumer_resp.message_id,
+            payload: consumer_resp.payload,
+            timestamp: consumer_resp.timestamp,
+        });
+
+        let mut stream = Box::pin(tokio_stream::iter(repeat).throttle(Duration::from_millis(200)));
+
+        // 3. Create channel
+        let (stx, srx) = tokio::sync::mpsc::channel(128);
+
+        // 4. spawn
         tokio::spawn(async move {
-            while let Some(result) = in_stream.next().await {
-                match result {
-                    Ok(consumer_req) => {
-                        if let Some(cr) = consumer_req.request {
-                            // stream_tx.send(value);
-                            match cr {
-                                CRequest::Ack(_ack_value) => {
-                                    // please append to wal as status:Ack
-                                }
-                                CRequest::Subscribe(_) => {
-                                    // Send response
-                                    let _ = stream_tx
-                                        .send(Ok(ConsumerResponse {
-                                            offset,
-                                            message_id: publish_request.message_id.clone(),
-                                            payload: publish_request.payload.clone(),
-                                            timestamp: publish_request.timestamp,
-                                        }))
-                                        .await;
-                                }
-                            };
-                        }
+            while let Some(item) = stream.next().await {
+                match stx.send(Result::<_, Status>::Ok(item)).await {
+                    Ok(_) => {
+                        // item (server response) was queued to be sent to client
                     }
-                    Err(err) => {
-                        error!("{:?}", err);
-                        // if let Some(io_err) = match_for_io_error(&err)
-                        //     && io_err.kind() == ErrorKind::BrokenPipe
-                        // {
-                        //     // here you can handle special case when client
-                        //     // disconnected in unexpected way
-                        //     eprintln!("\tclient disconnected: broken pipe");
-                        //     break;
-                        // }
-
-                        // match tx.send(Err(err)).await {
-                        //     Ok(_) => (),
-                        //     Err(_err) => break, // response was dropped
-                        // }
+                    Err(_item) => {
+                        // output_stream was build from rx and both are dropped
+                        break;
                     }
                 }
             }
+            println!("\tclient disconnected");
         });
-        // let consumer_resp = ConsumerResponse { offset: todo!(), message_id: todo!(), payload: todo!(), timestamp: todo!() };
+        // println!("{}", );
+        // Err(Status::new(
+        //     tonic::Code::Unimplemented,
+        //     "Server side streaming not implemented!",
+        // ))
+        let output_stream = ReceiverStream::new(srx);
+        Ok(Response::new(
+            Box::pin(output_stream) as Self::ConsumerStream
+        ))
+    }
 
-        let out_stream = ReceiverStream::new(stream_rx);
-        Ok(Response::new(Box::pin(out_stream) as Self::ConsumerStream))
+    async fn ack(&self, request: Request<AckRequest>) -> Result<Response<AckResponse>, Status> {
+        // 1. Get ack request
+        let ack_request = request.into_inner();
+
+        // 2. aof to wal-logs
+        // let app_data = &mut self.app_data.lock().await;
+        // let w_logger = &mut app_data.logger;
+        let w_logger = { &mut self.app_data.lock().await.logger };
+        let _ = w_logger.write_log(crate::utils::logger::GotRequest::AckRequest(&ack_request));
+
+        // 3. Send response back
+        Ok(Response::new(AckResponse { accepted: true }))
     }
 }
 
