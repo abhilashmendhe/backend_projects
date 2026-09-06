@@ -11,6 +11,10 @@ path = "src/ingestion_service/main.rs"
 name = "stream_queue"
 path = "src/stream_queue/main.rs"
 
+[[bin]]
+name = "consumer_service"
+path = "src/consumer_service/main.rs"
+
 
 [dependencies]
 actix-web = "4.14.1"
