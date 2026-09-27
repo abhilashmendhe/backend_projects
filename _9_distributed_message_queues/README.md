@@ -1,6 +1,6 @@
-# ✉️ ➡️ Distributed Message Queue
+# ⚠️ Discontinued - ✉️ ➡️ Distributed Message Queue
 
-Starting to build a distributed message queue service.....
+This project has been discontinued and is no longer maintained or actively developed.
 
 ---
 ## Architecture flow
