@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "_01_wallet_tracker",
+    "_02_erc20_indexer",
+]
+
+resolver = "3"
