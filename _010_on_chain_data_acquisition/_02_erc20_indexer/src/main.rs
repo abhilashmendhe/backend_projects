@@ -3,14 +3,13 @@ use alloy::eips::BlockNumberOrTag;
 use clap::Parser;
 
 /*
+*  $ cargo run -- --rpc-url https://eth-sepolia.g.alchemy.com/v2
 *  $ cargo run -- --rpc-url https://eth-mainnet.g.alchemy.com/v2
 *  $ cargo run -- --rpc-url https://rpc.ankr.com/eth
    $ cargo run -- --rpc-url https://eth-mainnet.g.alchemy.com/v2 --block-num-or-tag 25170558
    ----------------- wss ------------------
    $ cargo run -- --rpc-url wss://eth-mainnet.g.alchemy.com/v2
 */
-
-// enum
 
 #[derive(Parser, Debug)]
 struct ServerCli {

@@ -1,103 +1,50 @@
 use alloy::{
     eips::{BlockId, BlockNumberOrTag},
-    primitives::utils::format_ether,
     providers::{Provider, ProviderBuilder},
-    rpc::types::{BlockTransactions, Filter},
-    sol,
+    rpc::types::Filter,
 };
-
-// 1. Add this import to the top of your file
-use alloy::consensus::Transaction as _;
 
 use crate::utils::error::TokenIndexerErr;
 
 pub mod services;
 pub mod utils;
 
-sol! {
-    #[sol(rpc)]
-    #[derive(Debug)]
-    event Transfer(
-        address indexed from,
-        address indexed to,
-        uint256 value
-    );
-
-
-    #[sol(rpc)]
-    #[derive(Debug)]
-    interface IERC20 {
-        function balanceOf(address) external view returns (uint256);
-        function symbol() external view returns (string);
-        function decimals() external view returns (uint8);
-        function name() external view returns (string);
-    }
-}
-
-pub async fn run(
-    rpc_url: &str,
-    block_number_or_tag: BlockNumberOrTag,
-) -> Result<(), TokenIndexerErr> {
+pub async fn run(rpc_url: &str, _block_num_tag: BlockNumberOrTag) -> Result<(), TokenIndexerErr> {
     let provider = ProviderBuilder::new().connect(rpc_url).await?;
-    let block_id = BlockId::from(block_number_or_tag);
-    // let block_id = BlockId::Number(BlockNumberOrTag::Number(25170558));
 
-    let block_future = provider.get_block(block_id).full();
+    // provider
+    // Get the latest block number.
 
-    let filter = Filter::new()
-        .from_block(block_number_or_tag)
-        .to_block(block_number_or_tag);
+    if let Some(latest_block) = provider.get_block(BlockId::latest()).await? {
+        // println!("Block number: {}", latest_block.number());
+        // println!("{:#?}", latest_block);
+        let latest_block_number = latest_block.number();
 
-    let logs_future = provider.get_logs(&filter);
+        let header = latest_block.header;
+        println!("Header:\n");
+        println!("{:#?}", header);
 
-    let (block_res, logs_res) = tokio::join!(block_future, logs_future);
+        let uncles = latest_block.uncles;
+        println!("Uncles:\n");
+        println!("{:#?}", uncles);
 
-    let block = block_res?;
-    if let Some(block) = block {
-        println!("#------------------------- Transactions -------------------------#");
-        match block.clone().transactions {
-            BlockTransactions::Full(txs) => {
-                for tx in txs {
-                    let tx_hash = tx.inner.hash();
-                    let from_addr = tx.inner.signer();
-                    let to_addr = tx.inner.to();
-                    let value = tx.inner.value();
-                    let eth_value_wei = format_ether(value);
-                    let gas_limit = tx.inner.gas_limit();
-                    println!("Tx hash: {}", tx_hash);
-                    println!("From addr: {}", from_addr);
-                    println!("To addr: {:?}", to_addr);
-                    println!("Value: {:?} wei", eth_value_wei);
-                    println!("Gas limit: {:?}", gas_limit);
-                    println!();
-                    // break;
-                }
-            }
-            BlockTransactions::Hashes(_txs) => {}
-            BlockTransactions::Uncle => todo!(),
-        }
-    } else {
-        eprintln!("Block id: {} not found", block_id);
-    }
+        let transaction = latest_block.transactions;
+        println!("Transactions:\n");
+        println!("{:#?}", transaction);
 
-    let logs = logs_res.map_err(|_| TokenIndexerErr::LogNotFound("No logs found".to_string()))?;
-    println!("#------------------------- Logs -------------------------#");
-    for log in logs {
-        // println!("{}", type_name_of_val(&log));
-        // println!("{:?}", log);
-        match log.log_decode::<Transfer>() {
-            Ok(log_decode) => {
-                let data = log_decode.data();
-                println!("Token address: {}", log.address());
-                println!("from: {:?}", data.from);
-                println!("to: {:?}", data.to);
-                println!("value: {:?}", data.value);
-                println!("");
-            }
-            Err(_) => {
-                // eprintln!("Filed to decode log!")
-            }
+        let withdrawals = latest_block.withdrawals;
+        println!("Withdrawals:\n");
+        println!("{:#?}", withdrawals);
+
+        // Create a filter to get all logs from the latest block.
+        let filter = Filter::new().from_block(latest_block_number);
+        // Get all logs from the latest block that match the filter.
+        let logs = provider.get_logs(&filter).await?;
+        println!("Total logs: {}", logs.len());
+        for log in logs {
+            // println!("{:?}\n", log);
         }
     }
+
     Ok(())
 }
