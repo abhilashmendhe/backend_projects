@@ -1,4 +1,4 @@
-use std::env::VarError;
+use std::{env::VarError, num::ParseIntError};
 
 use alloy::transports::{RpcError, TransportErrorKind};
 use thiserror::Error;
@@ -7,6 +7,12 @@ use thiserror::Error;
 pub enum TokenIndexerErr {
     #[error("{}", .0)]
     EnvVarReadErr(#[from] VarError),
+
+    #[error("{}", .0)]
+    IOErr(#[from] std::io::Error),
+
+    #[error("{}", .0)]
+    ParseIntErr(#[from] ParseIntError),
 
     #[error("{}", .0)]
     RpcConnectError(#[from] RpcError<TransportErrorKind>),
